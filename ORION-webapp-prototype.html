@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ORION — What-if Scenario Planner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0B1220;
+  --ink-2:#141F35;
+  --rail-text:#8B93A7;
+  --rail-text-active:#FFFFFF;
+  --surface:#F5F6F8;
+  --card:#FFFFFF;
+  --border:#E2E5EA;
+  --border-soft:#EDEFF2;
+  --text:#141821;
+  --text-muted:#5B6472;
+  --text-faint:#9BA2AF;
+  --base-scn:#8A94A6;
+  --base-scn-bg:#EEF0F3;
+  --opt-scn:#3452D9;
+  --opt-scn-bg:#EAEEFC;
+  --accent:#3452D9;
+  --accent-dark:#2540B3;
+  --warn:#B5730A;
+  --warn-bg:#FBF0DD;
+  --danger:#C63C3C;
+  --danger-bg:#FBEAEA;
+  --success:#1E8E5A;
+  --success-bg:#E7F5EE;
+  --radius:10px;
+  --font-display:'Space Grotesk',sans-serif;
+  --font-body:'IBM Plex Sans',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:var(--font-body);
+  background:var(--surface);
+  color:var(--text);
+  font-size:14px;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+a{color:inherit;}
+
+/* ---------- layout shell ---------- */
+.shell{display:flex;height:100vh;overflow:hidden;}
+
+/* rail */
+.rail{
+  width:220px;flex:none;background:var(--ink);
+  display:flex;flex-direction:column;
+  padding:18px 12px;
+}
+.rail-brand{
+  display:flex;align-items:center;gap:9px;
+  padding:6px 8px 22px 8px;
+}
+.rail-mark{
+  width:26px;height:26px;border-radius:7px;
+  background:linear-gradient(135deg,var(--opt-scn),#6E82F0);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;color:#fff;font-size:13px;
+  flex:none;
+}
+.rail-brand-text{font-family:var(--font-display);font-weight:600;font-size:14.5px;color:#fff;letter-spacing:.2px;}
+.rail-brand-sub{font-size:10px;color:var(--rail-text);font-family:var(--font-mono);letter-spacing:.4px;}
+
+.rail-nav{display:flex;flex-direction:column;gap:2px;margin-top:6px;}
+.rail-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border-radius:8px;
+  color:var(--rail-text);font-size:13.2px;font-weight:500;
+  border:none;background:transparent;text-align:left;width:100%;
+  transition:background .12s,color .12s;
+}
+.rail-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+.rail-item.active{background:rgba(255,255,255,.08);color:var(--rail-text-active);}
+.rail-item.active .rail-ico{color:var(--opt-scn);}
+.rail-item .rail-ico{width:16px;height:16px;flex:none;color:var(--rail-text);}
+.rail-item.active .rail-ico{color:#8CA0FF;}
+.rail-divider{height:1px;background:rgba(255,255,255,.08);margin:12px 4px;}
+.rail-foot{margin-top:auto;padding:10px 8px;}
+.rail-region{
+  display:flex;align-items:center;gap:8px;color:var(--rail-text);font-size:11.5px;
+  padding:8px 8px;border-radius:8px;background:rgba(255,255,255,.05);
+}
+.rail-region b{color:#fff;font-weight:600;}
+
+/* main */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.topbar{
+  height:60px;flex:none;background:var(--card);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:16px;
+}
+.topbar-left{display:flex;align-items:center;gap:14px;min-width:0;}
+.topbar-title{font-family:var(--font-display);font-weight:600;font-size:17px;}
+.topbar-sub{font-size:12px;color:var(--text-muted);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+
+.select-pill{
+  display:flex;align-items:center;gap:7px;
+  border:1px solid var(--border);border-radius:8px;
+  padding:7px 10px;font-size:12.5px;background:#fff;color:var(--text);
+}
+.select-pill select{border:none;background:transparent;outline:none;font-size:12.5px;color:var(--text);font-weight:500;}
+.avatar{
+  width:30px;height:30px;border-radius:50%;background:var(--opt-scn-bg);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;font-family:var(--font-display);
+}
+
+.screen{flex:1;overflow:auto;padding:26px 30px 80px 30px;display:none;}
+.screen.active{display:block;}
+
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:20px;}
+.scenario-banner{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--opt-scn-bg);border:1px solid var(--accent);border-radius:10px;
+  padding:10px 14px;margin-bottom:18px;font-size:12.5px;color:var(--accent-dark);
+}
+.scenario-banner b{color:var(--ink);}
+.page-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--accent);text-transform:uppercase;margin-bottom:4px;}
+.page-title{font-family:var(--font-display);font-size:23px;font-weight:600;margin:0 0 4px 0;}
+.page-desc{color:var(--text-muted);font-size:13.5px;max-width:620px;line-height:1.5;}
+
+.btn{
+  border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);
+  padding:9px 14px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{border-color:#C9CDD6;}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-dark);}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--text-muted);}
+.btn-sm{padding:6px 10px;font-size:12px;}
+.btn-danger-outline{border-color:var(--danger);color:var(--danger);background:#fff;}
+.btn-success-outline{border-color:var(--success);color:var(--success);background:#fff;}
+
+/* ---------- signature delta chip ---------- */
+.delta-chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;}
+.delta-chip.pos{color:var(--success);background:var(--success-bg);}
+.delta-chip.neg{color:var(--danger);background:var(--danger-bg);}
+.delta-bars{display:flex;align-items:flex-end;gap:2px;height:14px;}
+.delta-bars i{display:block;width:3px;border-radius:1px;background:var(--base-scn);}
+.delta-bars i.opt{background:var(--opt-scn);}
+
+/* ---------- cards / grid ---------- */
+.grid-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);}
+.kpi-card{padding:16px 16px 14px 16px;}
+.kpi-label{font-size:11.5px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.03em;margin-bottom:10px;}
+.kpi-values{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;}
+.kpi-val{font-family:var(--font-display);font-size:24px;font-weight:600;}
+.kpi-base-val{font-family:var(--font-mono);font-size:12px;color:var(--text-faint);text-decoration:line-through;}
+.kpi-footline{display:flex;align-items:center;justify-content:space-between;}
+
+.legend-row{display:flex;align-items:center;gap:18px;margin-bottom:18px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-muted);}
+.legend-dot{width:9px;height:9px;border-radius:2px;}
+.legend-dot.base{background:var(--base-scn);}
+.legend-dot.opt{background:var(--opt-scn);}
+
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:20px;}
+.panel-head{padding:16px 18px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-family:var(--font-display);font-size:14.5px;font-weight:600;}
+.panel-body{padding:18px;}
+
+/* bar comparison chart (css/svg free, pure divs) */
+.barchart{display:flex;align-items:flex-end;gap:26px;height:170px;padding:10px 6px 0 6px;border-bottom:1px solid var(--border-soft);}
+.barchart-col{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;height:100%;justify-content:flex-end;}
+.barchart-bars{display:flex;align-items:flex-end;gap:5px;height:130px;}
+.barchart-bar{width:20px;border-radius:4px 4px 0 0;}
+.barchart-bar.base{background:var(--base-scn);}
+.barchart-bar.opt{background:var(--opt-scn);}
+.barchart-label{font-size:11px;color:var(--text-muted);text-align:center;}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{
+  text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted);
+  font-weight:600;padding:10px 12px;border-bottom:1px solid var(--border);background:#FAFBFC;
+}
+td{padding:11px 12px;border-bottom:1px solid var(--border-soft);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.mono{font-family:var(--font-mono);font-size:12.5px;}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.tag-pending{background:var(--warn-bg);color:var(--warn);}
+.tag-accepted{background:var(--success-bg);color:var(--success);}
+.tag-rejected{background:var(--danger-bg);color:var(--danger);}
+.row-actions{display:flex;gap:6px;}
+.icon-btn{
+  width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:#fff;
+  display:flex;align-items:center;justify-content:center;color:var(--text-muted);
+}
+.icon-btn.accept:hover{border-color:var(--success);color:var(--success);background:var(--success-bg);}
+.icon-btn.reject:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-bg);}
+.icon-btn.explain:hover{border-color:var(--accent);color:var(--accent);background:var(--opt-scn-bg);}
+.conf-bar{width:52px;height:6px;background:var(--border-soft);border-radius:4px;overflow:hidden;}
+.conf-bar i{display:block;height:100%;background:var(--opt-scn);}
+
+.filter-row{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.chip{
+  padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:12.5px;color:var(--text-muted);
+}
+.chip.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+.search-input{
+  border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12.5px;min-width:220px;background:#fff;
+}
+
+/* scenario compare matrix */
+.matrix-table td.metric-cell{font-family:var(--font-mono);}
+.matrix-table th.scn-head{text-align:center;}
+.scn-head-name{display:block;font-family:var(--font-display);font-size:13px;color:var(--text);text-transform:none;}
+.scn-head-tag{display:inline-block;margin-top:3px;font-size:10px;padding:2px 7px;border-radius:10px;background:var(--opt-scn-bg);color:var(--accent);}
+.scn-head-tag.base-tag{background:var(--base-scn-bg);color:var(--base-scn);}
+.best-cell{color:var(--success);font-weight:600;}
+
+/* input data grid */
+.data-grid td{padding:0;}
+.cell-input{
+  width:100%;border:1px solid transparent;background:transparent;padding:10px 12px;font-size:13px;font-family:var(--font-mono);color:var(--text);
+  border-radius:6px;
+}
+.cell-input:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px var(--opt-scn-bg);}
+.cell-input.cell-changed{background:var(--warn-bg);border-color:var(--warn);}
+.cell-input:disabled{color:var(--text-muted);background:transparent;-webkit-text-fill-color:var(--text-muted);opacity:1;}
+.dirty-dot{width:6px;height:6px;border-radius:50%;background:var(--warn);display:inline-block;margin-right:6px;visibility:hidden;}
+.save-bar{
+  position:sticky;bottom:0;background:var(--ink);color:#fff;border-radius:10px;
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-top:14px;
+}
+.save-bar-text{font-size:12.5px;color:var(--rail-text);}
+.save-bar-text b{color:#fff;}
+
+/* settings */
+.obj-row{display:grid;grid-template-columns:190px 1fr 60px;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border-soft);}
+.obj-row:last-child{border-bottom:none;}
+.obj-label{font-size:13.5px;font-weight:500;}
+.obj-desc{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+.slider{-webkit-appearance:none;width:100%;height:5px;border-radius:4px;background:var(--border);outline:none;}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--accent);}
+.obj-val{font-family:var(--font-mono);font-size:13px;text-align:right;color:var(--accent);font-weight:600;}
+
+.constraint-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border-soft);}
+.constraint-row:last-child{border-bottom:none;}
+.constraint-name{font-size:13.5px;font-weight:500;}
+.constraint-desc{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+.seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.seg button{border:none;background:#fff;padding:6px 12px;font-size:11.5px;font-weight:600;color:var(--text-muted);border-right:1px solid var(--border);}
+.seg button:last-child{border-right:none;}
+.seg button.on{background:var(--ink);color:#fff;}
+
+/* priority ranking list */
+.priority-list{display:flex;flex-direction:column;}
+.priority-row{display:flex;align-items:center;gap:14px;padding:12px 2px;border-bottom:1px solid var(--border-soft);}
+.priority-row:last-child{border-bottom:none;}
+.priority-badge{
+  width:36px;height:36px;border-radius:9px;background:var(--base-scn);color:#fff;flex:none;
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:13.5px;
+}
+.priority-row:first-child .priority-badge{background:var(--accent);}
+.priority-info{flex:1;min-width:0;}
+.priority-arrows{display:flex;flex-direction:column;gap:3px;}
+.priority-arrows button{
+  width:26px;height:22px;border:1px solid var(--border);background:#fff;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;padding:0;line-height:1;
+}
+.priority-arrows button:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.priority-arrows button:disabled{opacity:.3;cursor:default;}
+
+/* on/off toggle */
+.toggle-switch{width:42px;height:24px;border-radius:14px;background:var(--border);position:relative;border:none;flex:none;padding:0;}
+.toggle-switch .knob{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+.toggle-switch.on{background:var(--success);}
+.toggle-switch.on .knob{left:20px;}
+.toggle-label{font-size:11px;font-weight:600;color:var(--text-muted);width:22px;text-align:right;}
+
+/* welcome screen */
+.welcome-wrap{
+  height:100vh;width:100%;display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(52,82,217,.10), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(142,148,166,.14), transparent 45%),
+    var(--ink);
+}
+.welcome-card{width:960px;max-width:92vw;background:var(--card);border-radius:16px;overflow:hidden;display:flex;box-shadow:0 30px 80px rgba(0,0,0,.4);}
+.welcome-left{width:44%;background:var(--ink-2);padding:44px 38px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;}
+.welcome-left::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle,rgba(52,82,217,.35),transparent 70%);
+}
+.welcome-mark{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,var(--opt-scn),#6E82F0);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;color:#fff;font-size:17px;}
+.welcome-headline{font-family:var(--font-display);font-size:26px;font-weight:600;color:#fff;line-height:1.25;margin:26px 0 10px 0;}
+.welcome-sub{color:var(--rail-text);font-size:13px;line-height:1.6;max-width:280px;}
+.welcome-stats{display:flex;gap:22px;margin-top:30px;position:relative;z-index:1;}
+.welcome-stat b{display:block;font-family:var(--font-display);font-size:19px;color:#fff;}
+.welcome-stat span{font-size:10.5px;color:var(--rail-text);text-transform:uppercase;letter-spacing:.04em;}
+.welcome-right{flex:1;padding:44px 42px;display:flex;flex-direction:column;}
+.field-label{font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;display:block;}
+.field{margin-bottom:16px;}
+.field input,.field select{
+  width:100%;border:1px solid var(--border);border-radius:8px;padding:11px 12px;font-size:13.5px;background:#fff;
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--opt-scn-bg);}
+.region-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
+.region-opt{
+  border:1.5px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;
+}
+.region-opt.sel{border-color:var(--accent);background:var(--opt-scn-bg);}
+.region-opt b{display:block;font-size:13px;font-family:var(--font-display);}
+.region-opt span{font-size:11px;color:var(--text-muted);}
+
+/* chat drawer */
+.chat-toggle{
+  position:fixed;right:26px;bottom:26px;z-index:50;
+  width:56px;height:56px;border-radius:50%;background:var(--ink);color:#fff;border:none;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(11,18,32,.35);
+}
+.chat-toggle .dot{position:absolute;top:10px;right:10px;width:9px;height:9px;background:var(--opt-scn);border-radius:50%;border:2px solid var(--ink);}
+.chat-drawer{
+  position:fixed;top:0;right:-400px;width:380px;height:100vh;background:#fff;border-left:1px solid var(--border);
+  z-index:60;transition:right .25s ease;display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(0,0,0,.08);
+}
+.chat-drawer.open{right:0;}
+.chat-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.chat-head-title{display:flex;align-items:center;gap:9px;}
+.chat-avatar{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--opt-scn),#6E82F0);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-size:13px;font-weight:700;}
+.chat-ctx{font-size:10.5px;color:var(--text-muted);font-family:var(--font-mono);}
+.chat-body{flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px;}
+.msg{max-width:88%;font-size:13px;line-height:1.5;padding:10px 12px;border-radius:10px;}
+.msg.bot{background:var(--surface);border:1px solid var(--border-soft);align-self:flex-start;border-bottom-left-radius:3px;}
+.msg.user{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:3px;}
+.msg-validate{display:flex;gap:8px;margin-top:8px;}
+.chat-suggest{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 14px 18px;}
+.suggest-chip{border:1px solid var(--border);background:#fff;border-radius:16px;padding:6px 11px;font-size:11.5px;color:var(--text-muted);}
+.chat-input-row{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:8px;}
+.chat-input-row input{flex:1;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;}
+.chat-input-row button{width:38px;height:38px;border-radius:8px;background:var(--accent);border:none;color:#fff;flex:none;display:flex;align-items:center;justify-content:center;}
+
+svg{display:block;}
+
+.module-switch{display:flex;gap:4px;background:rgba(255,255,255,.07);border-radius:8px;padding:3px;margin:2px 0 14px 0;}
+.module-switch button{flex:1;border:none;background:transparent;color:var(--rail-text);font-size:11.5px;font-weight:600;padding:7px 0;border-radius:6px;}
+.module-switch button.on{background:var(--accent);color:#fff;}
+
+.section-heading{font-family:var(--font-display);font-size:14px;font-weight:600;margin:24px 0 12px 0;}
+.section-sub{font-size:11.5px;color:var(--text-muted);font-weight:400;margin-left:8px;}
+
+.chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:6px;}
+.chart-ph{border:1px dashed var(--border);border-radius:10px;background:#FAFBFC;padding:14px;min-height:150px;display:flex;flex-direction:column;}
+.chart-ph.selected{border-color:var(--accent);border-style:solid;background:var(--opt-scn-bg);}
+.chart-ph-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.chart-ph-title{font-weight:600;font-size:12.5px;line-height:1.3;}
+.chart-ph-type{font-size:9.5px;padding:2px 7px;border-radius:9px;background:var(--base-scn-bg);color:var(--base-scn);text-transform:uppercase;letter-spacing:.03em;flex:none;font-weight:700;}
+.chart-ph-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:1px dashed var(--border-soft);border-radius:8px;background:repeating-linear-gradient(45deg,#fff,#fff 8px,#F5F6F8 8px,#F5F6F8 16px);padding:10px;}
+.chart-ph-axis{font-size:10px;color:var(--text-faint);margin-top:8px;font-family:var(--font-mono);}
+.chart-ph[data-cat]{cursor:pointer;}
+.rec-count{font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--ink);}
+
+.tab-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+.bulk-toolbar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted);}
+.bulk-selectall{display:flex;align-items:center;gap:6px;}
+.bulk-input{width:60px;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;}
+.bulk-label{white-space:nowrap;}
+
+.module-opt{border:1.5px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;}
+.module-opt.sel{border-color:var(--accent);background:var(--opt-scn-bg);}
+.module-opt b{display:block;font-size:13.5px;font-family:var(--font-display);margin-bottom:3px;}
+.module-opt span{font-size:11px;color:var(--text-muted);}
+
+.placeholder-panel{border:1.5px dashed var(--border);border-radius:12px;padding:44px 30px;text-align:center;background:#FAFBFC;}
+.placeholder-icon{font-size:34px;margin-bottom:10px;}
+.placeholder-title{font-family:var(--font-display);font-weight:600;font-size:15px;margin-bottom:6px;}
+.placeholder-desc{font-size:12.5px;color:var(--text-muted);max-width:440px;margin:0 auto 20px auto;line-height:1.5;}
+.skel-table{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:8px;}
+.skel-row{display:flex;gap:10px;}
+.skel-cell{height:12px;border-radius:4px;background:var(--border-soft);}
+
+/* ---------- fulfillment decisions / capacity scenarios / consensus ---------- */
+.decision-tag{font-size:10.5px;padding:3px 9px;border-radius:9px;text-transform:none;font-weight:600;display:inline-block;}
+.decision-postpone{background:var(--warn-bg);color:var(--warn);}
+.decision-altloc{background:var(--opt-scn-bg);color:var(--opt-scn);}
+.decision-altdc{background:#EAF3FC;color:#1E6FA8;}
+.decision-partial{background:#F3EAFB;color:#6B3FA0;}
+.decision-carrier{background:var(--base-scn-bg);color:var(--base-scn);}
+.decision-hold{background:var(--danger-bg);color:var(--danger);}
+
+.constraint-src{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);}
+
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.compare-col{border:1px solid var(--border);border-radius:10px;padding:16px;}
+.compare-col.local{background:#FBFAF8;border-color:#EAE3D5;}
+.compare-col.network{background:var(--opt-scn-bg);border-color:#CBD6F6;}
+.compare-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.compare-label{font-family:var(--font-display);font-weight:600;font-size:13px;}
+.compare-pill{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+.compare-pill.local{background:var(--warn-bg);color:var(--warn);}
+.compare-pill.network{background:var(--opt-scn);color:#fff;}
+.compare-row{display:flex;align-items:baseline;justify-content:space-between;padding:7px 0;border-top:1px dashed var(--border-soft);font-size:12.5px;}
+.compare-row:first-of-type{border-top:none;}
+.compare-row b{font-family:var(--font-mono);font-size:13.5px;}
+.compare-foot{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);font-size:11.5px;color:var(--text-muted);line-height:1.5;}
+
+.cap-subtabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px;width:fit-content;margin-bottom:16px;}
+.cap-subtabs button{border:none;background:transparent;padding:8px 18px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--text-muted);}
+.cap-subtabs button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(10,16,30,.08);}
+
+.refresh-strip{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:var(--text-muted);}
+.refresh-strip b{color:var(--text);}
+.refresh-dot{width:7px;height:7px;border-radius:50%;background:var(--success);display:inline-block;margin-right:6px;}
+
+.cap-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+.util-bar-track{width:100%;height:6px;border-radius:3px;background:var(--border-soft);overflow:hidden;margin-top:4px;}
+.util-bar-fill{height:100%;border-radius:3px;background:var(--accent);}
+.util-bar-fill.warn{background:var(--warn);}
+.util-bar-fill.danger{background:var(--danger);}
+
+.step-tracker{display:flex;gap:0;margin-bottom:22px;overflow-x:auto;padding-bottom:4px;}
+.step-card{flex:1;min-width:150px;border:1px solid var(--border);background:var(--card);padding:14px 14px 13px 14px;position:relative;border-right:none;}
+.step-card:first-child{border-radius:10px 0 0 10px;}
+.step-card:last-child{border-radius:0 10px 10px 0;border-right:1px solid var(--border);}
+.step-card.done{background:var(--success-bg);}
+.step-card.active{background:var(--opt-scn-bg);box-shadow:inset 0 0 0 1.5px var(--accent);}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--border-soft);color:var(--text-muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-family:var(--font-mono);}
+.step-card.done .step-num{background:var(--success);color:#fff;}
+.step-card.active .step-num{background:var(--accent);color:#fff;}
+.step-title{font-weight:600;font-size:12px;margin-bottom:3px;line-height:1.3;}
+.step-meta{font-size:10.5px;color:var(--text-muted);line-height:1.4;}
+.step-status{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-top:7px;display:inline-block;}
+.step-status.done{color:var(--success);}
+.step-status.active{color:var(--accent);}
+.step-status.pending{color:var(--text-faint);}
+
+.timeline{display:flex;flex-direction:column;}
+.timeline-item{display:flex;gap:12px;padding:0 0 18px 0;position:relative;}
+.timeline-item:last-child{padding-bottom:0;}
+.timeline-rail{display:flex;flex-direction:column;align-items:center;flex:none;}
+.timeline-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);margin-top:4px;flex:none;}
+.timeline-dot.rerun{background:var(--warn);}
+.timeline-dot.publish{background:var(--success);}
+.timeline-line{width:1.5px;flex:1;background:var(--border);margin-top:2px;}
+.timeline-body{flex:1;}
+.timeline-time{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);}
+.timeline-text{font-size:12.5px;margin-top:2px;line-height:1.45;}
+.timeline-text b{font-weight:600;}
+
+.signoff-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--border-soft);gap:14px;}
+.signoff-row:first-child{border-top:none;}
+.signoff-team{display:flex;flex-direction:column;}
+.signoff-team b{font-size:12.5px;font-weight:600;}
+.signoff-team span{font-size:11px;color:var(--text-muted);}
+.signoff-status{font-size:10.5px;padding:3px 10px;border-radius:9px;font-weight:600;white-space:nowrap;}
+.signoff-status.signed{background:var(--success-bg);color:var(--success);}
+.signoff-status.pending{background:var(--base-scn-bg);color:var(--base-scn);}
+.signoff-status.changes{background:var(--danger-bg);color:var(--danger);}
+
+.publish-banner{display:none;align-items:center;gap:10px;background:var(--success-bg);border:1px solid #BFE3CE;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12.5px;color:var(--success);font-weight:500;}
+.publish-banner.show{display:flex;}
+
+.wh-actual-pallets,.wh-actual-cases,.trans-actual-trucks{transition:background-color 1.6s ease;border-radius:4px;}
+.cell-flash{background-color:var(--warn-bg);}
+</style>
+</head>
+<body>
+
+<!-- ============ WELCOME SCREEN ============ -->
+<div class="welcome-wrap" id="welcomeScreen">
+  <div class="welcome-card">
+    <div class="welcome-left">
+      <div>
+        <div class="welcome-mark">OR</div>
+        <div class="welcome-headline">ORION<br>What-if Scenario Planner</div>
+        <div class="welcome-sub">Run what-if scenarios across order fulfillment optimization and dynamic order fallback &mdash; compare, explain, and act, all before anything touches production.</div>
+      </div>
+      <div class="welcome-stats">
+        <div class="welcome-stat"><b>12</b><span>Markets live</span></div>
+        <div class="welcome-stat"><b>4.2M</b><span>Orders / mo</span></div>
+        <div class="welcome-stat"><b>4</b><span>Decision models</span></div>
+      </div>
+    </div>
+    <div class="welcome-right">
+      <div class="field">
+        <label class="field-label">Work email</label>
+        <input type="text" value="bala.k@tredence.com" readonly>
+      </div>
+      <div class="field">
+        <label class="field-label">Password</label>
+        <input type="password" value="••••••••••">
+      </div>
+      <label class="field-label">Select your market</label>
+      <div class="region-grid">
+        <div class="region-opt sel" onclick="selectRegion(this)"><b>Malaysia</b><span>8 DCs &middot; 4,100 stores</span></div>
+        <div class="region-opt" onclick="selectRegion(this)"><b>Singapore</b><span>2 DCs &middot; 640 stores</span></div>
+        <div class="region-opt" onclick="selectRegion(this)"><b>Thailand</b><span>5 DCs &middot; 2,300 stores</span></div>
+        <div class="region-opt" onclick="selectRegion(this)"><b>Vietnam</b><span>3 DCs &middot; 1,150 stores</span></div>
+      </div>
+      <button class="btn btn-primary" style="justify-content:center;padding:12px;" onclick="enterApp()">Enter workspace &rarr;</button>
+      <div style="text-align:center;margin-top:12px;font-size:11.5px;color:var(--text-faint);">Access requires SSO approval from your region admin</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div class="shell" id="appShell" style="display:none;">
+  <div class="rail">
+    <div class="rail-brand">
+      <div class="rail-mark">OR</div>
+      <div>
+        <div class="rail-brand-text">ORION</div>
+        <div class="rail-brand-sub">What-if Scenario &middot; v1.0</div>
+      </div>
+    </div>
+    <div class="rail-nav" id="navMain"><button class="rail-item" data-screen="recanalysis" onclick="navFromRail('recanalysis', this)"><svg class="rail-ico" viewBox="0 0 24 24" fill="none"><circle cx="7" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M14 6h7M14 12h7M14 18h7M4 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Recommendation Analysis</button><button class="rail-item" data-screen="consensus" onclick="navFromRail('consensus', this)"><svg class="rail-ico" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="8" r="3" stroke="currentColor" stroke-width="2"/><path d="M3 20c0-3 2.5-5 5-5s5 2 5 5M11 20c0-3 2.5-5 5-5s5 2 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Consensus &amp; Publish</button></div>
+    <div class="rail-divider"></div>
+    <button class="rail-item" data-screen="regions" onclick="navFromRail('regions', this)"><svg class="rail-ico" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21Z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.3" stroke="currentColor" stroke-width="2"/></svg>Regions &amp; Access</button><button class="rail-item" data-screen="defaultsettings" onclick="navFromRail('defaultsettings', this)"><svg class="rail-ico" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V19.6a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H4.4a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1.03 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H10.5a1.7 1.7 0 0 0 1.03-1.56V4.4a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V10.5a1.7 1.7 0 0 0 1.56 1.03h.09a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.56 1.03Z" stroke="currentColor" stroke-width="1.6"/></svg>Default Scenario Settings</button>
+    <div class="rail-foot">
+      <div class="rail-region">🌐 Active market: <b>&nbsp;Malaysia</b></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div>
+          <div class="topbar-title" id="topbarTitle">Recommendation Analysis</div>
+          <div class="topbar-sub" id="topbarSub">1,580 recommendations generated</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="select-pill" id="cyclePill">📅 <select><option>Cycle: Week 27, 2026</option><option>Cycle: Week 26, 2026</option></select></div>
+        <div class="select-pill" id="scenarioPill">🧪 <select class="scenario-select" id="topbarScenarioSelect" onchange="syncScenarioSelects(this)"><option>Optimized — Cost Focus</option><option>Optimized — Service Focus</option><option>Optimized — Default</option></select></div>
+        <div class="avatar">BK</div>
+      </div>
+    </div>
+
+    <!-- ===== EXECUTIVE SUMMARY ===== -->
+    <div class="screen" id="screen-recanalysis"><div class="page-head"><div><div class="page-eyebrow">1,580 recommendations generated</div><h1 class="page-title">Recommendation Analysis</h1><div class="page-desc">Same base-vs-optimized KPIs as the Summary, broken down by the kind of recommendation driving the change. Click any card to filter the table.</div></div><button class="btn btn-primary" onclick="showScreen('newscenario', null)">+ New scenario</button></div><div class="panel" style="margin-bottom:14px;"><div class="panel-body" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;"><span style="font-size:11.5px;font-weight:600;color:var(--text-muted);">Comparing</span><div class="select-pill">Base: <select id="recCompareBase" class="search-input" style="font-weight:600;"><option>Base Plan (current)</option></select></div><span class="mono" style="font-size:11px;color:var(--text-muted);" id="recBaseTimestamp">Today, 02:00</span><span style="color:var(--text-faint);">vs</span><div class="select-pill">🧪 <select class="scenario-select" id="recCompareOptimized" onchange="syncScenarioSelects(this)"><option>Optimized — Cost Focus</option><option>Optimized — Service Focus</option><option selected>Optimized — Default</option></select></div><span class="tag tag-accepted" id="capacityRefreshedTag" style="display:none;">🔄 Capacity Refreshed</span></div></div><div class="grid-kpi"><div class="card kpi-card"><div class="kpi-label">Total fulfillment cost</div><div class="kpi-values"><span class="kpi-val">RM 4.82M</span><span class="kpi-base-val">RM 5.31M</span></div><div class="kpi-footline"><span class="delta-chip pos">&#9660; 9.2%</span><span class="delta-bars"><i style="height:14px"></i><i class="opt" style="height:10px"></i></span></div></div><div class="card kpi-card"><div class="kpi-label">Order fill rate</div><div class="kpi-values"><span class="kpi-val">96.4%</span><span class="kpi-base-val">91.8%</span></div><div class="kpi-footline"><span class="delta-chip pos">&#9650; 4.6pt</span><span class="delta-bars"><i style="height:10px"></i><i class="opt" style="height:14px"></i></span></div></div><div class="card kpi-card"><div class="kpi-label">On-time delivery</div><div class="kpi-values"><span class="kpi-val">94.1%</span><span class="kpi-base-val">89.6%</span></div><div class="kpi-footline"><span class="delta-chip pos">&#9650; 4.5pt</span><span class="delta-bars"><i style="height:10px"></i><i class="opt" style="height:14px"></i></span></div></div><div class="card kpi-card"><div class="kpi-label">Transportation cost / order</div><div class="kpi-values"><span class="kpi-val">RM 11.20</span><span class="kpi-base-val">RM 12.95</span></div><div class="kpi-footline"><span class="delta-chip pos">&#9660; 13.5%</span><span class="delta-bars"><i style="height:14px"></i><i class="opt" style="height:9px"></i></span></div></div><div class="card kpi-card"><div class="kpi-label">Inventory turns</div><div class="kpi-values"><span class="kpi-val">14.2x</span><span class="kpi-base-val">12.6x</span></div><div class="kpi-footline"><span class="delta-chip pos">&#9650; 12.7%</span><span class="delta-bars"><i style="height:10px"></i><i class="opt" style="height:14px"></i></span></div></div><div class="card kpi-card"><div class="kpi-label">Stockout rate</div><div class="kpi-values"><span class="kpi-val">3.8%</span><span class="kpi-base-val">3.1%</span></div><div class="kpi-footline"><span class="delta-chip neg">&#9650; 0.7pt</span><span class="delta-bars"><i style="height:9px"></i><i class="opt" style="height:12px"></i></span></div></div><div class="card kpi-card"><div class="kpi-label">Perfect order rate</div><div class="kpi-values"><span class="kpi-val">93.8%</span><span class="kpi-base-val">88.4%</span></div><div class="kpi-footline"><span class="delta-chip pos">&#9650; 5.4pt</span><span class="delta-bars"><i style="height:10px"></i><i class="opt" style="height:14px"></i></span></div></div><div class="card kpi-card"><div class="kpi-label">Avg. order cycle time</div><div class="kpi-values"><span class="kpi-val">8.1 hrs</span><span class="kpi-base-val">9.4 hrs</span></div><div class="kpi-footline"><span class="delta-chip pos">&#9660; 13.8%</span><span class="delta-bars"><i style="height:14px"></i><i class="opt" style="height:10px"></i></span></div></div><div class="card kpi-card"><div class="kpi-label">DC capacity utilization</div><div class="kpi-values"><span class="kpi-val">81.2%</span><span class="kpi-base-val">76.5%</span></div><div class="kpi-footline"><span class="delta-chip pos">&#9650; 4.7pt</span><span class="delta-bars"><i style="height:10px"></i><i class="opt" style="height:13px"></i></span></div></div><div class="card kpi-card"><div class="kpi-label">Split order rate</div><div class="kpi-values"><span class="kpi-val">9.8%</span><span class="kpi-base-val">6.1%</span></div><div class="kpi-footline"><span class="delta-chip neg">&#9650; 3.7pt</span><span class="delta-bars"><i style="height:9px"></i><i class="opt" style="height:13px"></i></span></div></div></div><div class="section-heading">Recommendation Types<span class="section-sub">8 charts &middot; click a card or chip to filter</span></div><div class="chart-grid"><div class="chart-ph " data-cat="reroute" onclick="filterRecAnalysis('reroute')" style="cursor:pointer;"><div class="chart-ph-head"><span class="chart-ph-title">Reroute to Alternate DC<br><span class="rec-count">412</span></span><span class="chart-ph-type">Donut</span></div><div class="chart-ph-body"><span style="font-size:22px;">&#127765;</span><span style="font-size:11px;margin-top:6px;color:var(--text-faint);">Click to filter table below</span></div><div class="chart-ph-axis">Category: Reroute to Alternate DC</div></div><div class="chart-ph " data-cat="split" onclick="filterRecAnalysis('split')" style="cursor:pointer;"><div class="chart-ph-head"><span class="chart-ph-title">Split Order Across DCs<br><span class="rec-count">268</span></span><span class="chart-ph-type">Bar</span></div><div class="chart-ph-body"><span style="font-size:22px;">&#128202;</span><span style="font-size:11px;margin-top:6px;color:var(--text-faint);">Click to filter table below</span></div><div class="chart-ph-axis">Category: Split Order Across DCs</div></div><div class="chart-ph " data-cat="substitute" onclick="filterRecAnalysis('substitute')" style="cursor:pointer;"><div class="chart-ph-head"><span class="chart-ph-title">Substitute SKU<br><span class="rec-count">154</span></span><span class="chart-ph-type">Bar</span></div><div class="chart-ph-body"><span style="font-size:22px;">&#128202;</span><span style="font-size:11px;margin-top:6px;color:var(--text-faint);">Click to filter table below</span></div><div class="chart-ph-axis">Category: Substitute SKU</div></div><div class="chart-ph " data-cat="expedite" onclick="filterRecAnalysis('expedite')" style="cursor:pointer;"><div class="chart-ph-head"><span class="chart-ph-title">Expedite Shipment<br><span class="rec-count">201</span></span><span class="chart-ph-type">Donut</span></div><div class="chart-ph-body"><span style="font-size:22px;">&#127765;</span><span style="font-size:11px;margin-top:6px;color:var(--text-faint);">Click to filter table below</span></div><div class="chart-ph-axis">Category: Expedite Shipment</div></div><div class="chart-ph " data-cat="consolidate" onclick="filterRecAnalysis('consolidate')" style="cursor:pointer;"><div class="chart-ph-head"><span class="chart-ph-title">Consolidate Load<br><span class="rec-count">187</span></span><span class="chart-ph-type">Bar</span></div><div class="chart-ph-body"><span style="font-size:22px;">&#128202;</span><span style="font-size:11px;margin-top:6px;color:var(--text-faint);">Click to filter table below</span></div><div class="chart-ph-axis">Category: Consolidate Load</div></div><div class="chart-ph " data-cat="carrier" onclick="filterRecAnalysis('carrier')" style="cursor:pointer;"><div class="chart-ph-head"><span class="chart-ph-title">Change Carrier / Mode<br><span class="rec-count">96</span></span><span class="chart-ph-type">Bar</span></div><div class="chart-ph-body"><span style="font-size:22px;">&#128202;</span><span style="font-size:11px;margin-top:6px;color:var(--text-faint);">Click to filter table below</span></div><div class="chart-ph-axis">Category: Change Carrier / Mode</div></div><div class="chart-ph " data-cat="advance" onclick="filterRecAnalysis('advance')" style="cursor:pointer;"><div class="chart-ph-head"><span class="chart-ph-title">Advance Delivery Date<br><span class="rec-count">143</span></span><span class="chart-ph-type">Donut</span></div><div class="chart-ph-body"><span style="font-size:22px;">&#127765;</span><span style="font-size:11px;margin-top:6px;color:var(--text-faint);">Click to filter table below</span></div><div class="chart-ph-axis">Category: Advance Delivery Date</div></div><div class="chart-ph " data-cat="defer" onclick="filterRecAnalysis('defer')" style="cursor:pointer;"><div class="chart-ph-head"><span class="chart-ph-title">Defer Delivery Date<br><span class="rec-count">119</span></span><span class="chart-ph-type">Bar</span></div><div class="chart-ph-body"><span style="font-size:22px;">&#128202;</span><span style="font-size:11px;margin-top:6px;color:var(--text-faint);">Click to filter table below</span></div><div class="chart-ph-axis">Category: Defer Delivery Date</div></div></div><div class="filter-row"><span class="chip active" data-cat="all" onclick="filterRecAnalysis('all')">All (10)</span><span class="chip" data-cat="reroute" onclick="filterRecAnalysis('reroute')">Reroute to Alternate DC</span><span class="chip" data-cat="split" onclick="filterRecAnalysis('split')">Split Order Across DCs</span><span class="chip" data-cat="substitute" onclick="filterRecAnalysis('substitute')">Substitute SKU</span><span class="chip" data-cat="expedite" onclick="filterRecAnalysis('expedite')">Expedite Shipment</span><span class="chip" data-cat="consolidate" onclick="filterRecAnalysis('consolidate')">Consolidate Load</span><span class="chip" data-cat="carrier" onclick="filterRecAnalysis('carrier')">Change Carrier / Mode</span><span class="chip" data-cat="advance" onclick="filterRecAnalysis('advance')">Advance Delivery Date</span><span class="chip" data-cat="defer" onclick="filterRecAnalysis('defer')">Defer Delivery Date</span></div><div class="section-heading">Recommendations<span class="section-sub">Click a type above to filter &middot; every row shows its current status — accept, reject, or leave open</span></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><div class="select-pill">🧪 Scenario: <select class="scenario-select" onchange="syncScenarioSelects(this)"><option>Optimized — Cost Focus</option><option>Optimized — Service Focus</option><option>Optimized — Default</option></select></div><div style="display:flex;gap:8px;margin-left:auto;"><button class="btn btn-success-outline" onclick="bulkAction('accept')">Accept all filtered</button><button class="btn btn-danger-outline" onclick="bulkAction('reject')">Reject all filtered</button></div></div><div class="filter-row" id="recStatusFilter"><span class="chip active" data-status="all" onclick="filterByStatus('all', this)">All (1,840)</span><span class="chip" data-status="pending" onclick="filterByStatus('pending', this)">Open orders (1,206)</span><span class="chip" data-status="accepted" onclick="filterByStatus('accepted', this)">Accepted (512)</span><span class="chip" data-status="rejected" onclick="filterByStatus('rejected', this)">Rejected (122)</span><input class="search-input" placeholder="Search order ID or store…" style="margin-left:auto;"></div><div class="panel"><table id="unifiedRecsTable"><thead><tr><th>Order</th><th>Store</th><th>Type</th><th>Base DC &rarr; Recommended DC</th><th>Cost Δ</th><th>Status</th><th></th></tr></thead><tbody><tr data-cat="reroute" data-status="pending"><td class="mono">#48213</td><td>Tesco Setia Alam</td><td>Reroute to Alternate DC</td><td class="mono" style="font-size:11.5px;">DC Klang &rarr; DC Ipoh</td><td class="mono" style="color:var(--success)">−RM 210</td><td><span class="tag tag-pending">Pending</span></td><td><div class="row-actions"><button class="icon-btn explain" onclick="openChat('order','#48213')" title="Ask why">💬</button><button class="icon-btn accept" onclick="setStatus(this,'accepted')">✓</button><button class="icon-btn reject" onclick="setStatus(this,'rejected')">✕</button></div></td></tr><tr data-cat="split" data-status="accepted"><td class="mono">#48214</td><td>Aeon Bukit Tinggi</td><td>Split Order Across DCs</td><td class="mono" style="font-size:11.5px;">DC Klang &rarr; DC Klang + DC Penang</td><td class="mono" style="color:var(--success)">−RM 640</td><td><span class="tag tag-accepted">Accepted</span></td><td><div class="row-actions"><button class="icon-btn explain" onclick="openChat('order','#48214')" title="Ask why">💬</button><button class="icon-btn accept" onclick="setStatus(this,'accepted')">✓</button><button class="icon-btn reject" onclick="setStatus(this,'rejected')">✕</button></div></td></tr><tr data-cat="substitute" data-status="pending"><td class="mono">#48219</td><td>Lotus's Penang</td><td>Substitute SKU</td><td class="mono" style="font-size:11.5px;">DC Penang &rarr; DC Penang</td><td class="mono" style="color:var(--success)">−RM 85</td><td><span class="tag tag-pending">Pending</span></td><td><div class="row-actions"><button class="icon-btn explain" onclick="openChat('order','#48219')" title="Ask why">💬</button><button class="icon-btn accept" onclick="setStatus(this,'accepted')">✓</button><button class="icon-btn reject" onclick="setStatus(this,'rejected')">✕</button></div></td></tr><tr data-cat="expedite" data-status="rejected"><td class="mono">#48221</td><td>Village Grocer JB</td><td>Expedite Shipment</td><td class="mono" style="font-size:11.5px;">DC Johor Bahru &rarr; DC Johor Bahru</td><td class="mono" style="color:var(--danger)">+RM 320</td><td><span class="tag tag-rejected">Rejected</span></td><td><div class="row-actions"><button class="icon-btn explain" onclick="openChat('order','#48221')" title="Ask why">💬</button><button class="icon-btn accept" onclick="setStatus(this,'accepted')">✓</button><button class="icon-btn reject" onclick="setStatus(this,'rejected')">✕</button></div></td></tr><tr data-cat="consolidate" data-status="accepted"><td class="mono">#48225</td><td>99 Speedmart Ipoh</td><td>Consolidate Load</td><td class="mono" style="font-size:11.5px;">DC Ipoh &rarr; DC Ipoh</td><td class="mono" style="color:var(--success)">−RM 410</td><td><span class="tag tag-accepted">Accepted</span></td><td><div class="row-actions"><button class="icon-btn explain" onclick="openChat('order','#48225')" title="Ask why">💬</button><button class="icon-btn accept" onclick="setStatus(this,'accepted')">✓</button><button class="icon-btn reject" onclick="setStatus(this,'rejected')">✕</button></div></td></tr><tr data-cat="carrier" data-status="pending"><td class="mono">#48230</td><td>Giant Kota Kinabalu</td><td>Change Carrier / Mode</td><td class="mono" style="font-size:11.5px;">DC Kota Kinabalu &rarr; DC Kuching</td><td class="mono" style="color:var(--success)">−RM 95</td><td><span class="tag tag-pending">Pending</span></td><td><div class="row-actions"><button class="icon-btn explain" onclick="openChat('order','#48230')" title="Ask why">💬</button><button class="icon-btn accept" onclick="setStatus(this,'accepted')">✓</button><button class="icon-btn reject" onclick="setStatus(this,'rejected')">✕</button></div></td></tr><tr data-cat="advance" data-status="accepted"><td class="mono">#48233</td><td>Tesco Penang Island</td><td>Advance Delivery Date</td><td class="mono" style="font-size:11.5px;">DC Penang &rarr; DC Penang</td><td class="mono" style="color:var(--text-muted)">RM 0</td><td><span class="tag tag-accepted">Accepted</span></td><td><div class="row-actions"><button class="icon-btn explain" onclick="openChat('order','#48233')" title="Ask why">💬</button><button class="icon-btn accept" onclick="setStatus(this,'accepted')">✓</button><button class="icon-btn reject" onclick="setStatus(this,'rejected')">✕</button></div></td></tr><tr data-cat="defer" data-status="pending"><td class="mono">#48237</td><td>Mydin Johor Bahru</td><td>Defer Delivery Date</td><td class="mono" style="font-size:11.5px;">DC Johor Bahru &rarr; DC Johor Bahru</td><td class="mono" style="color:var(--success)">−RM 150</td><td><span class="tag tag-pending">Pending</span></td><td><div class="row-actions"><button class="icon-btn explain" onclick="openChat('order','#48237')" title="Ask why">💬</button><button class="icon-btn accept" onclick="setStatus(this,'accepted')">✓</button><button class="icon-btn reject" onclick="setStatus(this,'rejected')">✕</button></div></td></tr><tr data-cat="reroute" data-status="accepted"><td class="mono">#48240</td><td>Lotus's Ipoh</td><td>Reroute to Alternate DC</td><td class="mono" style="font-size:11.5px;">DC Johor Bahru &rarr; DC Klang</td><td class="mono" style="color:var(--success)">−RM 300</td><td><span class="tag tag-accepted">Accepted</span></td><td><div class="row-actions"><button class="icon-btn explain" onclick="openChat('order','#48240')" title="Ask why">💬</button><button class="icon-btn accept" onclick="setStatus(this,'accepted')">✓</button><button class="icon-btn reject" onclick="setStatus(this,'rejected')">✕</button></div></td></tr><tr data-cat="split" data-status="rejected"><td class="mono">#48244</td><td>Giant Shah Alam</td><td>Split Order Across DCs</td><td class="mono" style="font-size:11.5px;">DC Penang &rarr; DC Penang + DC Kuching</td><td class="mono" style="color:var(--success)">−RM 220</td><td><span class="tag tag-rejected">Rejected</span></td><td><div class="row-actions"><button class="icon-btn explain" onclick="openChat('order','#48244')" title="Ask why">💬</button><button class="icon-btn accept" onclick="setStatus(this,'accepted')">✓</button><button class="icon-btn reject" onclick="setStatus(this,'rejected')">✕</button></div></td></tr></tbody></table></div></div><!-- ===== SCENARIO COMPARE ===== -->
+    <div class="screen" id="screen-newscenario"><div class="page-head"><div><div class="page-eyebrow">Scenario setup</div><h1 class="page-title">Create New Scenario</h1><div class="page-desc">Name your scenario, then configure its input data and optimization settings below — all in one place.</div></div><button class="btn btn-primary" onclick="finishNewScenario()">Save &amp; finish</button></div><div class="panel" style="max-width:520px;"><div class="panel-body"><div class="field"><label class="field-label">Run ID</label><select id="newScenarioRunId"><option>RUN-20260714-01 (Week 27 baseline)</option><option>RUN-20260707-03 (Week 26 rerun)</option><option>RUN-20260630-01 (Week 25 baseline)</option></select></div><div class="field"><label class="field-label">Scenario name</label><input type="text" id="newScenarioName" placeholder="e.g. Optimized — Peak Season"></div><div class="field" style="margin-bottom:0;"><label class="field-label">Clone starting point from</label><select id="newScenarioClone"><option>Optimized — Default</option><option>Optimized — Cost Focus</option><option>Optimized — Service Focus</option></select><div style="font-size:11px;color:var(--text-muted);margin-top:6px;">🔄 <b>Optimized — Default</b> runs on its own schedule against the latest refreshed throughput &amp; capacity data — configure its schedule, model and constraints in <b>Default Scenario Settings</b>.</div></div></div></div><div class="cap-subtabs" id="scenarioConfigTabs" style="margin-top:22px;"><button class="on" data-tab="inputs" onclick="showScenarioConfigTab('inputs', this)">Input Data</button><button data-tab="settings" onclick="showScenarioConfigTab('settings', this)">Optimization Settings</button></div><div id="scenarioTab-inputs"><div class="page-head"><div><div class="page-eyebrow">Master, capacity &amp; inventory tables &middot; editable</div><h1 class="page-title">Input Data</h1><div class="page-desc">Master data for this use case, organized by domain. Aggregate to different hierarchy levels, compare base vs. changed values, or apply mass updates across selected rows.</div></div><button class="btn">Upload CSV</button></div><div class="cap-subtabs" id="inputGroupTabs"><button class="on" data-group="capacity" onclick="showInputGroup('capacity', this)">Capacity Tables</button><button data-group="inventory" onclick="showInputGroup('inventory', this)">Inventory Tables</button><button data-group="master" onclick="showInputGroup('master', this)">Master Tables</button></div><div class="filter-row"><span class="chip active" data-domain="throughput" onclick="showInputTab('throughput', this)">DC Throughput</span><span class="chip" data-domain="lanes" onclick="showInputTab('lanes', this)">Transport Capacity Lanes</span><span class="chip" data-domain="trucks" onclick="showInputTab('trucks', this)">Truck Capacity &amp; Min Thresholds</span><span class="chip" data-domain="demand" style="display:none;" onclick="showInputTab('demand', this)">Demand Forecast</span><span class="chip" data-domain="skumaster" style="display:none;" onclick="showInputTab('skumaster', this)">SKU Master</span><span class="chip" data-domain="storemaster" style="display:none;" onclick="showInputTab('storemaster', this)">Store Master</span><span class="chip" data-domain="safetystock" style="display:none;" onclick="showInputTab('safetystock', this)">Safety Stock Policy</span><span class="chip" data-domain="invsnapshot" style="display:none;" onclick="showInputTab('invsnapshot', this)">Inventory Snapshot</span><span class="chip" data-domain="costrates" style="display:none;" onclick="showInputTab('costrates', this)">Cost Rates (Handling &amp; Storage)</span><span class="chip" data-domain="freight" style="display:none;" onclick="showInputTab('freight', this)">Freight Rate Card</span><span class="chip" data-domain="leadtime" style="display:none;" onclick="showInputTab('leadtime', this)">Lead Time Matrix</span><span class="chip" data-domain="deliverywindow" style="display:none;" onclick="showInputTab('deliverywindow', this)">Delivery Time Windows</span><span class="chip" data-domain="compat" style="display:none;" onclick="showInputTab('compat', this)">Product Compatibility Rules</span><span class="chip" data-domain="promo" style="display:none;" onclick="showInputTab('promo', this)">Promotion Calendar</span><span class="chip" data-domain="calendar" style="display:none;" onclick="showInputTab('calendar', this)">Calendar &amp; Working Days</span></div><div style="font-size:11.5px;color:var(--text-muted);margin:-6px 0 14px 0;">🟠 Amber cells differ from the <b>Base</b> column shown alongside them &middot; edit directly to update the changed value</div><div class="input-table-wrap" id="wrap-throughput"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'throughput')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>Distribution Center</option><option>Region</option><option>Country</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'throughput')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'throughput')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>Distribution Center</th><th>Max Daily Throughput (units)</th><th>Base</th><th>Current Load (units)</th><th>Utilization</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Klang</td><td><input class="cell-input bulk-target" value="18,500" data-base="18,000" onchange="markDirty(this)"></td><td class="mono base-val">18,000</td><td class="mono">15,200</td><td class="mono">84%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Penang</td><td><input class="cell-input bulk-target" value="9,500" data-base="9,500" onchange="markDirty(this)"></td><td class="mono base-val">9,500</td><td class="mono">7,400</td><td class="mono">78%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Johor Bahru</td><td><input class="cell-input bulk-target" value="12,000" data-base="12,000" onchange="markDirty(this)"></td><td class="mono base-val">12,000</td><td class="mono">11,100</td><td class="mono">93%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Ipoh</td><td><input class="cell-input bulk-target" value="6,200" data-base="6,200" onchange="markDirty(this)"></td><td class="mono base-val">6,200</td><td class="mono">4,000</td><td class="mono">65%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Kota Kinabalu</td><td><input class="cell-input bulk-target" value="5,400" data-base="5,000" onchange="markDirty(this)"></td><td class="mono base-val">5,000</td><td class="mono">4,650</td><td class="mono">93%</td></tr></tbody></table></div><div class="section-heading">Weekly Capacity Scenario<span class="section-sub">Planned vs. actual dock capacity by day, with backlog, peak &amp; average — refreshed with the button above</span></div><div class="cap-kpi-row">
+<div class="card kpi-card"><div class="kpi-label">DCs at or over peak</div><div class="kpi-values"><span class="kpi-val" style="color:var(--danger);">2</span></div><div class="kpi-footline"><span class="mono" style="font-size:11px;color:var(--text-muted);">of 8 DCs, this week</span></div></div>
+<div class="card kpi-card"><div class="kpi-label">Backlog carried into today</div><div class="kpi-values"><span class="kpi-val">3,120</span></div><div class="kpi-footline"><span class="mono" style="font-size:11px;color:var(--text-muted);">pallets, network-wide</span></div></div>
+<div class="card kpi-card"><div class="kpi-label">Avg. network dock utilization</div><div class="kpi-values"><span class="kpi-val">78%</span></div><div class="kpi-footline"><span class="mono" style="font-size:11px;color:var(--text-muted);">7-day rolling</span></div></div>
+<div class="card kpi-card"><div class="kpi-label">DCs reporting below plan</div><div class="kpi-values"><span class="kpi-val">1</span></div><div class="kpi-footline"><span class="mono" style="font-size:11px;color:var(--text-muted);">actuals under planned</span></div></div>
+</div><div class="filter-row"><span class="chip active">DC Klang</span><span class="chip">DC Ipoh</span><span class="chip">DC Penang</span><span class="chip">DC Johor Bahru</span><span class="chip">DC Kuching</span><span class="chip">All DCs (network view)</span></div><div class="tab-toolbar"><div><div class="panel-title" style="font-family:var(--font-display);font-weight:600;font-size:14px;">DC Klang &middot; Week 27 outbound dock capacity</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Planned values are set for the full week; actuals and backlog refresh daily overnight.</div></div><button class="btn" onclick="toggleSelectAll(this, 'none')" style="visibility:hidden;"></button></div><div class="panel"><table id="warehouseCapTable" class="data-grid"><thead><tr><th>Day</th><th>Planned (Pallets)</th><th>Planned (Cases)</th><th>Actual (Pallets)</th><th>Actual (Cases)</th><th>Backlog Carried In</th><th>Peak Capacity</th><th>Avg Capacity</th><th>Dock Utilization</th><th>Status</th></tr></thead><tbody><tr><td><b>Mon</b></td><td class="mono">3,200</td><td class="mono">41,600</td><td class="mono wh-actual-pallets">3,140</td><td class="mono wh-actual-cases">40,820</td><td class="mono" style="color:var(--text)">0</td><td class="mono" style="color:var(--text-faint);">3,600</td><td class="mono" style="color:var(--text-faint);">2,980</td><td><div style="min-width:70px;">87%<div class="util-bar-track"><div class="util-bar-fill" style="width:87%"></div></div></div></td><td><span class="tag tag-accepted">On track</span></td></tr><tr><td><b>Tue</b></td><td class="mono">3,200</td><td class="mono">41,600</td><td class="mono wh-actual-pallets">3,310</td><td class="mono wh-actual-cases">43,030</td><td class="mono" style="color:var(--text)">60</td><td class="mono" style="color:var(--text-faint);">3,600</td><td class="mono" style="color:var(--text-faint);">2,980</td><td><div style="min-width:70px;">92%<div class="util-bar-track"><div class="util-bar-fill" style="width:92%"></div></div></div></td><td><span class="tag tag-accepted">On track</span></td></tr><tr><td><b>Wed</b></td><td class="mono">3,200</td><td class="mono">41,600</td><td class="mono wh-actual-pallets">3,460</td><td class="mono wh-actual-cases">44,980</td><td class="mono" style="color:var(--text)">230</td><td class="mono" style="color:var(--text-faint);">3,600</td><td class="mono" style="color:var(--text-faint);">2,980</td><td><div style="min-width:70px;">96%<div class="util-bar-track"><div class="util-bar-fill warn" style="width:96%"></div></div></div></td><td><span class="tag tag-pending">At risk</span></td></tr><tr><td><b>Thu</b></td><td class="mono">3,200</td><td class="mono">41,600</td><td class="mono wh-actual-pallets">3,590</td><td class="mono wh-actual-cases">46,670</td><td class="mono" style="color:var(--danger)">410</td><td class="mono" style="color:var(--text-faint);">3,600</td><td class="mono" style="color:var(--text-faint);">2,980</td><td><div style="min-width:70px;">100%<div class="util-bar-track"><div class="util-bar-fill danger" style="width:100%"></div></div></div></td><td><span class="tag tag-rejected">Breached</span></td></tr><tr><td><b>Fri</b></td><td class="mono">3,400</td><td class="mono">44,200</td><td class="mono wh-actual-pallets">3,520</td><td class="mono wh-actual-cases">45,760</td><td class="mono" style="color:var(--danger)">540</td><td class="mono" style="color:var(--text-faint);">3,600</td><td class="mono" style="color:var(--text-faint);">2,980</td><td><div style="min-width:70px;">98%<div class="util-bar-track"><div class="util-bar-fill warn" style="width:98%"></div></div></div></td><td><span class="tag tag-pending">At risk</span></td></tr><tr><td><b>Sat</b></td><td class="mono">2,600</td><td class="mono">33,800</td><td class="mono wh-actual-pallets">2,480</td><td class="mono wh-actual-cases">32,240</td><td class="mono" style="color:var(--danger)">320</td><td class="mono" style="color:var(--text-faint);">3,600</td><td class="mono" style="color:var(--text-faint);">2,980</td><td><div style="min-width:70px;">69%<div class="util-bar-track"><div class="util-bar-fill" style="width:69%"></div></div></div></td><td><span class="tag tag-accepted">On track</span></td></tr><tr><td><b>Sun</b></td><td class="mono">1,800</td><td class="mono">23,400</td><td class="mono wh-actual-pallets">1,690</td><td class="mono wh-actual-cases">21,970</td><td class="mono" style="color:var(--text)">110</td><td class="mono" style="color:var(--text-faint);">3,600</td><td class="mono" style="color:var(--text-faint);">2,980</td><td><div style="min-width:70px;">47%<div class="util-bar-track"><div class="util-bar-fill" style="width:47%"></div></div></div></td><td><span class="tag tag-accepted">On track</span></td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-lanes" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'lanes')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>Lane</option><option>Origin DC</option><option>Region</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'lanes')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'lanes')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>Lane</th><th>Vehicle Type</th><th>Capacity (pallets)</th><th>Base</th><th>Trips / Week</th><th>Lead Time (hrs)</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Klang &rarr; Tesco Setia Alam</td><td>10-Ton Rigid</td><td><input class="cell-input bulk-target" value="26" data-base="24" onchange="markDirty(this)"></td><td class="mono base-val">24</td><td class="mono">12</td><td class="mono">3</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Penang &rarr; Lotus's Penang</td><td>5-Ton Rigid</td><td><input class="cell-input bulk-target" value="14" data-base="14" onchange="markDirty(this)"></td><td class="mono base-val">14</td><td class="mono">10</td><td class="mono">2</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Johor Bahru &rarr; Village Grocer JB</td><td>10-Ton Rigid</td><td><input class="cell-input bulk-target" value="22" data-base="22" onchange="markDirty(this)"></td><td class="mono base-val">22</td><td class="mono">9</td><td class="mono">4</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Ipoh &rarr; 99 Speedmart Ipoh</td><td>3-Ton Rigid</td><td><input class="cell-input bulk-target" value="10" data-base="10" onchange="markDirty(this)"></td><td class="mono base-val">10</td><td class="mono">14</td><td class="mono">2</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Kota Kinabalu &rarr; Giant KK</td><td>5-Ton Rigid</td><td><input class="cell-input bulk-target" value="12" data-base="12" onchange="markDirty(this)"></td><td class="mono base-val">12</td><td class="mono">8</td><td class="mono">3</td></tr></tbody></table></div><div class="section-heading">Weekly Capacity Scenario<span class="section-sub">Long-term vs. spot contract truck capacity by lane — refreshed with the button above</span></div><div class="cap-kpi-row">
+<div class="card kpi-card"><div class="kpi-label">Lanes with long-term gap</div><div class="kpi-values"><span class="kpi-val" style="color:var(--warn);">4</span></div><div class="kpi-footline"><span class="mono" style="font-size:11px;color:var(--text-muted);">need spot cover this week</span></div></div>
+<div class="card kpi-card"><div class="kpi-label">Spot trucks activated</div><div class="kpi-values"><span class="kpi-val">62</span></div><div class="kpi-footline"><span class="mono" style="font-size:11px;color:var(--text-muted);">this week, network-wide</span></div></div>
+<div class="card kpi-card"><div class="kpi-label">Avg. spot rate premium</div><div class="kpi-values"><span class="kpi-val">+38%</span></div><div class="kpi-footline"><span class="mono" style="font-size:11px;color:var(--text-muted);">vs long-term contract rate</span></div></div>
+<div class="card kpi-card"><div class="kpi-label">Network truck utilization</div><div class="kpi-values"><span class="kpi-val">84%</span></div><div class="kpi-footline"><span class="mono" style="font-size:11px;color:var(--text-muted);">7-day rolling</span></div></div>
+</div><div class="filter-row"><span class="chip active">All Contracts</span><span class="chip">Long-term Contract</span><span class="chip">Spot Contract</span></div><div class="panel"><table id="transportCapTable" class="data-grid"><thead><tr><th>Lane</th><th>Fleet Type</th><th>Contract Type</th><th>Trucks/Day Planned</th><th>Trucks/Day Actual</th><th>Peak Trucks/Day</th><th>Avg Trucks/Day</th><th>Spot Rate Premium</th><th>Utilization</th><th>Status</th></tr></thead><tbody><tr><td>Klang &rarr; Setia Alam</td><td class="mono" style="font-size:11.5px;">13-ton box</td><td><span class="tag tag-accepted">Long-term Contract</span></td><td class="mono">22</td><td class="mono trans-actual-trucks">21</td><td class="mono" style="color:var(--text-faint);">26</td><td class="mono" style="color:var(--text-faint);">19</td><td class="mono" style="color:var(--text-faint)">&ndash;</td><td><div style="min-width:70px;">91%<div class="util-bar-track"><div class="util-bar-fill" style="width:91%"></div></div></div></td><td><span class="tag tag-accepted">On track</span></td></tr><tr><td>Klang &rarr; Shah Alam</td><td class="mono" style="font-size:11.5px;">13-ton box</td><td><span class="tag tag-accepted">Long-term Contract</span></td><td class="mono">18</td><td class="mono trans-actual-trucks">19</td><td class="mono" style="color:var(--text-faint);">22</td><td class="mono" style="color:var(--text-faint);">16</td><td class="mono" style="color:var(--text-faint)">&ndash;</td><td><div style="min-width:70px;">97%<div class="util-bar-track"><div class="util-bar-fill warn" style="width:97%"></div></div></div></td><td><span class="tag tag-pending">At risk</span></td></tr><tr><td>Klang &rarr; Johor Bahru</td><td class="mono" style="font-size:11.5px;">20-ton trailer</td><td><span class="tag tag-accepted">Long-term Contract</span></td><td class="mono">10</td><td class="mono trans-actual-trucks">12</td><td class="mono" style="color:var(--text-faint);">12</td><td class="mono" style="color:var(--text-faint);">9</td><td class="mono" style="color:var(--text-faint)">&ndash;</td><td><div style="min-width:70px;">100%<div class="util-bar-track"><div class="util-bar-fill danger" style="width:100%"></div></div></div></td><td><span class="tag tag-rejected">Breached</span></td></tr><tr><td>Klang &rarr; Johor Bahru</td><td class="mono" style="font-size:11.5px;">20-ton trailer</td><td><span class="tag tag-pending">Spot Contract</span></td><td class="mono">0</td><td class="mono trans-actual-trucks">6</td><td class="mono" style="color:var(--text-faint);">8</td><td class="mono" style="color:var(--text-faint);">3</td><td class="mono" style="color:var(--warn)">+38%</td><td><span style="color:var(--text-faint);">&ndash;</span></td><td><span class="tag tag-accepted">On track</span></td></tr><tr><td>Ipoh &rarr; Penang</td><td class="mono" style="font-size:11.5px;">13-ton box</td><td><span class="tag tag-accepted">Long-term Contract</span></td><td class="mono trans-actual-trucks">8</td><td class="mono">8</td><td class="mono" style="color:var(--text-faint);">10</td><td class="mono" style="color:var(--text-faint);">7</td><td class="mono" style="color:var(--text-faint)">&ndash;</td><td><div style="min-width:70px;">80%<div class="util-bar-track"><div class="util-bar-fill" style="width:80%"></div></div></div></td><td><span class="tag tag-accepted">On track</span></td></tr><tr><td>Penang &rarr; Kuching</td><td class="mono" style="font-size:11.5px;">Ferry + 13-ton</td><td><span class="tag tag-accepted">Long-term Contract</span></td><td class="mono">4</td><td class="mono trans-actual-trucks">5</td><td class="mono" style="color:var(--text-faint);">5</td><td class="mono" style="color:var(--text-faint);">4</td><td class="mono" style="color:var(--text-faint)">&ndash;</td><td><div style="min-width:70px;">100%<div class="util-bar-track"><div class="util-bar-fill danger" style="width:100%"></div></div></div></td><td><span class="tag tag-rejected">Breached</span></td></tr><tr><td>Penang &rarr; Kuching</td><td class="mono" style="font-size:11.5px;">Ferry + 13-ton</td><td><span class="tag tag-pending">Spot Contract</span></td><td class="mono">0</td><td class="mono trans-actual-trucks">3</td><td class="mono" style="color:var(--text-faint);">4</td><td class="mono" style="color:var(--text-faint);">1</td><td class="mono" style="color:var(--warn)">+54%</td><td><span style="color:var(--text-faint);">&ndash;</span></td><td><span class="tag tag-accepted">On track</span></td></tr><tr><td>Johor Bahru &rarr; Kuching</td><td class="mono" style="font-size:11.5px;">20-ton trailer</td><td><span class="tag tag-accepted">Long-term Contract</span></td><td class="mono trans-actual-trucks">6</td><td class="mono">6</td><td class="mono" style="color:var(--text-faint);">7</td><td class="mono" style="color:var(--text-faint);">5</td><td class="mono" style="color:var(--text-faint)">&ndash;</td><td><div style="min-width:70px;">86%<div class="util-bar-track"><div class="util-bar-fill" style="width:86%"></div></div></div></td><td><span class="tag tag-accepted">On track</span></td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-trucks" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'trucks')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>Truck Type</option><option>Fleet Class</option><option>All Trucks</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'trucks')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'trucks')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>Truck Type</th><th>Max Payload (kg)</th><th>Base</th><th>Max Volume (m&sup3;)</th><th>Min Load Threshold</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>3-Ton Rigid</td><td><input class="cell-input bulk-target" value="3,000" data-base="3,000" onchange="markDirty(this)"></td><td class="mono base-val">3,000</td><td class="mono">14</td><td class="mono">55%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>5-Ton Rigid</td><td><input class="cell-input bulk-target" value="5,000" data-base="5,000" onchange="markDirty(this)"></td><td class="mono base-val">5,000</td><td class="mono">22</td><td class="mono">65%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>10-Ton Rigid</td><td><input class="cell-input bulk-target" value="10,500" data-base="10,000" onchange="markDirty(this)"></td><td class="mono base-val">10,000</td><td class="mono">38</td><td class="mono">70%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>20ft Container</td><td><input class="cell-input bulk-target" value="21,000" data-base="21,000" onchange="markDirty(this)"></td><td class="mono base-val">21,000</td><td class="mono">33</td><td class="mono">75%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>40ft Container</td><td><input class="cell-input bulk-target" value="26,000" data-base="26,000" onchange="markDirty(this)"></td><td class="mono base-val">26,000</td><td class="mono">67</td><td class="mono">75%</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-demand" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'demand')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>SKU-Store</option><option>SKU</option><option>Category</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'demand')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'demand')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>SKU</th><th>Store</th><th>Forecast Qty</th><th>Base</th><th>Lead Time (d)</th><th>Safety Stock</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-1042</td><td>Tesco Setia Alam</td><td><input class="cell-input bulk-target" value="1,290" data-base="1,240" onchange="markDirty(this)"></td><td class="mono base-val">1,240</td><td class="mono">3</td><td class="mono">180</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-1088</td><td>Aeon Bukit Tinggi</td><td><input class="cell-input bulk-target" value="860" data-base="860" onchange="markDirty(this)"></td><td class="mono base-val">860</td><td class="mono">2</td><td class="mono">120</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-2201</td><td>Lotus's Penang</td><td><input class="cell-input bulk-target" value="2,010" data-base="2,010" onchange="markDirty(this)"></td><td class="mono base-val">2,010</td><td class="mono">4</td><td class="mono">260</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-2340</td><td>Village Grocer JB</td><td><input class="cell-input bulk-target" value="540" data-base="540" onchange="markDirty(this)"></td><td class="mono base-val">540</td><td class="mono">3</td><td class="mono">90</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-3015</td><td>99 Speedmart Ipoh</td><td><input class="cell-input bulk-target" value="1,120" data-base="1,120" onchange="markDirty(this)"></td><td class="mono base-val">1,120</td><td class="mono">2</td><td class="mono">150</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-skumaster" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'skumaster')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>SKU</option><option>Category</option><option>Brand</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'skumaster')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'skumaster')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>SKU</th><th>Category</th><th>Standard Cost (RM)</th><th>Base</th><th>Unit Weight (kg)</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-1042</td><td>Beverages</td><td><input class="cell-input bulk-target" value="4.20" data-base="4.20" onchange="markDirty(this)"></td><td class="mono base-val">4.20</td><td class="mono">0.35</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-1088</td><td>Confectionery</td><td><input class="cell-input bulk-target" value="2.10" data-base="2.10" onchange="markDirty(this)"></td><td class="mono base-val">2.10</td><td class="mono">0.12</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-2201</td><td>Dairy</td><td><input class="cell-input bulk-target" value="7.10" data-base="6.80" onchange="markDirty(this)"></td><td class="mono base-val">6.80</td><td class="mono">1.00</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-2340</td><td>Culinary</td><td><input class="cell-input bulk-target" value="3.40" data-base="3.40" onchange="markDirty(this)"></td><td class="mono base-val">3.40</td><td class="mono">0.50</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-3015</td><td>Beverages</td><td><input class="cell-input bulk-target" value="4.50" data-base="4.50" onchange="markDirty(this)"></td><td class="mono base-val">4.50</td><td class="mono">0.35</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-storemaster" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'storemaster')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>Store</option><option>Region</option><option>Market</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'storemaster')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'storemaster')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>Store</th><th>Channel</th><th>Weekly Order Cap (units)</th><th>Base</th><th>Region</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Tesco Setia Alam</td><td>Modern Trade</td><td><input class="cell-input bulk-target" value="8,000" data-base="8,000" onchange="markDirty(this)"></td><td class="mono base-val">8,000</td><td class="mono">Central</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Aeon Bukit Tinggi</td><td>Modern Trade</td><td><input class="cell-input bulk-target" value="6,500" data-base="6,500" onchange="markDirty(this)"></td><td class="mono base-val">6,500</td><td class="mono">Central</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Lotus's Penang</td><td>Modern Trade</td><td><input class="cell-input bulk-target" value="7,600" data-base="7,200" onchange="markDirty(this)"></td><td class="mono base-val">7,200</td><td class="mono">North</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Village Grocer JB</td><td>Premium</td><td><input class="cell-input bulk-target" value="3,100" data-base="3,100" onchange="markDirty(this)"></td><td class="mono base-val">3,100</td><td class="mono">South</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>99 Speedmart Ipoh</td><td>Convenience</td><td><input class="cell-input bulk-target" value="2,400" data-base="2,400" onchange="markDirty(this)"></td><td class="mono base-val">2,400</td><td class="mono">North</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-safetystock" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'safetystock')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>SKU-DC</option><option>SKU</option><option>Category</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'safetystock')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'safetystock')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>SKU</th><th>Distribution Center</th><th>Safety Stock (days)</th><th>Base</th><th>Service Level Target</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-1042</td><td>DC Klang</td><td><input class="cell-input bulk-target" value="5" data-base="5" onchange="markDirty(this)"></td><td class="mono base-val">5</td><td class="mono">95%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-1088</td><td>DC Penang</td><td><input class="cell-input bulk-target" value="4" data-base="4" onchange="markDirty(this)"></td><td class="mono base-val">4</td><td class="mono">90%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-2201</td><td>DC Johor Bahru</td><td><input class="cell-input bulk-target" value="7" data-base="6" onchange="markDirty(this)"></td><td class="mono base-val">6</td><td class="mono">97%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-2340</td><td>DC Ipoh</td><td><input class="cell-input bulk-target" value="3" data-base="3" onchange="markDirty(this)"></td><td class="mono base-val">3</td><td class="mono">90%</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-3015</td><td>DC Kota Kinabalu</td><td><input class="cell-input bulk-target" value="5" data-base="5" onchange="markDirty(this)"></td><td class="mono base-val">5</td><td class="mono">93%</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-invsnapshot" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'invsnapshot')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>SKU-DC</option><option>DC</option><option>Category</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'invsnapshot')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'invsnapshot')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>SKU</th><th>Distribution Center</th><th>On-Hand Qty</th><th>Base</th><th>Allocated Qty</th><th>Available Qty</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-1042</td><td>DC Klang</td><td><input class="cell-input bulk-target" value="4,200" data-base="4,200" onchange="markDirty(this)"></td><td class="mono base-val">4,200</td><td class="mono">3,100</td><td class="mono">1,100</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-1088</td><td>DC Penang</td><td><input class="cell-input bulk-target" value="2,600" data-base="2,600" onchange="markDirty(this)"></td><td class="mono base-val">2,600</td><td class="mono">2,000</td><td class="mono">600</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-2201</td><td>DC Johor Bahru</td><td><input class="cell-input bulk-target" value="4,100" data-base="3,900" onchange="markDirty(this)"></td><td class="mono base-val">3,900</td><td class="mono">3,200</td><td class="mono">700</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-2340</td><td>DC Ipoh</td><td><input class="cell-input bulk-target" value="1,450" data-base="1,450" onchange="markDirty(this)"></td><td class="mono base-val">1,450</td><td class="mono">1,100</td><td class="mono">350</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-3015</td><td>DC Kota Kinabalu</td><td><input class="cell-input bulk-target" value="980" data-base="980" onchange="markDirty(this)"></td><td class="mono base-val">980</td><td class="mono">700</td><td class="mono">280</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-costrates" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'costrates')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>Distribution Center</option><option>Region</option><option>Country</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'costrates')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'costrates')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>Distribution Center</th><th>Handling Cost (RM/unit)</th><th>Base</th><th>Storage Cost (RM/unit/day)</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Klang</td><td><input class="cell-input bulk-target" value="0.85" data-base="0.85" onchange="markDirty(this)"></td><td class="mono base-val">0.85</td><td class="mono">0.05</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Penang</td><td><input class="cell-input bulk-target" value="0.95" data-base="0.90" onchange="markDirty(this)"></td><td class="mono base-val">0.90</td><td class="mono">0.06</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Johor Bahru</td><td><input class="cell-input bulk-target" value="0.88" data-base="0.88" onchange="markDirty(this)"></td><td class="mono base-val">0.88</td><td class="mono">0.05</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Ipoh</td><td><input class="cell-input bulk-target" value="0.82" data-base="0.82" onchange="markDirty(this)"></td><td class="mono base-val">0.82</td><td class="mono">0.04</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Kota Kinabalu</td><td><input class="cell-input bulk-target" value="1.05" data-base="1.05" onchange="markDirty(this)"></td><td class="mono base-val">1.05</td><td class="mono">0.07</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-freight" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'freight')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>Lane</option><option>Mode</option><option>Region</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'freight')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'freight')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>Lane</th><th>Mode</th><th>Rate (RM/km)</th><th>Base</th><th>Base Distance (km)</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Klang &rarr; Tesco Setia Alam</td><td>Road</td><td><input class="cell-input bulk-target" value="2.10" data-base="2.10" onchange="markDirty(this)"></td><td class="mono base-val">2.10</td><td class="mono">28</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Penang &rarr; Lotus's Penang</td><td>Road</td><td><input class="cell-input bulk-target" value="2.40" data-base="2.25" onchange="markDirty(this)"></td><td class="mono base-val">2.25</td><td class="mono">34</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Johor Bahru &rarr; Village Grocer JB</td><td>Road</td><td><input class="cell-input bulk-target" value="2.15" data-base="2.15" onchange="markDirty(this)"></td><td class="mono base-val">2.15</td><td class="mono">41</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Ipoh &rarr; 99 Speedmart Ipoh</td><td>Road</td><td><input class="cell-input bulk-target" value="2.05" data-base="2.05" onchange="markDirty(this)"></td><td class="mono base-val">2.05</td><td class="mono">19</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Kota Kinabalu &rarr; Giant KK</td><td>Road</td><td><input class="cell-input bulk-target" value="2.60" data-base="2.60" onchange="markDirty(this)"></td><td class="mono base-val">2.60</td><td class="mono">12</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-leadtime" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'leadtime')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>Lane</option><option>Mode</option><option>Region</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'leadtime')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'leadtime')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>Lane</th><th>Mode</th><th>Lead Time (days)</th><th>Base</th><th>Variability (&plusmn;days)</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Klang &rarr; Tesco Setia Alam</td><td>Road</td><td><input class="cell-input bulk-target" value="1" data-base="1" onchange="markDirty(this)"></td><td class="mono base-val">1</td><td class="mono">0.5</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Penang &rarr; Lotus's Penang</td><td>Road</td><td><input class="cell-input bulk-target" value="2" data-base="1" onchange="markDirty(this)"></td><td class="mono base-val">1</td><td class="mono">0.5</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Johor Bahru &rarr; Village Grocer JB</td><td>Road</td><td><input class="cell-input bulk-target" value="2" data-base="2" onchange="markDirty(this)"></td><td class="mono base-val">2</td><td class="mono">1</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Ipoh &rarr; 99 Speedmart Ipoh</td><td>Road</td><td><input class="cell-input bulk-target" value="1" data-base="1" onchange="markDirty(this)"></td><td class="mono base-val">1</td><td class="mono">0.5</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Kota Kinabalu &rarr; Giant KK</td><td>Road</td><td><input class="cell-input bulk-target" value="2" data-base="2" onchange="markDirty(this)"></td><td class="mono base-val">2</td><td class="mono">1</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-deliverywindow" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'deliverywindow')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>Store</option><option>Region</option><option>Market</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'deliverywindow')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'deliverywindow')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>Store</th><th>Window Start</th><th>Base</th><th>Window End</th><th>Dock Type</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Tesco Setia Alam</td><td><input class="cell-input bulk-target" value="08:00" data-base="08:00" onchange="markDirty(this)"></td><td class="mono base-val">08:00</td><td class="mono">12:00</td><td class="mono">Standard</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Aeon Bukit Tinggi</td><td><input class="cell-input bulk-target" value="08:30" data-base="09:00" onchange="markDirty(this)"></td><td class="mono base-val">09:00</td><td class="mono">13:00</td><td class="mono">Standard</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Lotus's Penang</td><td><input class="cell-input bulk-target" value="07:30" data-base="07:30" onchange="markDirty(this)"></td><td class="mono base-val">07:30</td><td class="mono">11:30</td><td class="mono">Cold-chain</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Village Grocer JB</td><td><input class="cell-input bulk-target" value="10:00" data-base="10:00" onchange="markDirty(this)"></td><td class="mono base-val">10:00</td><td class="mono">14:00</td><td class="mono">Standard</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>99 Speedmart Ipoh</td><td><input class="cell-input bulk-target" value="08:00" data-base="08:00" onchange="markDirty(this)"></td><td class="mono base-val">08:00</td><td class="mono">11:00</td><td class="mono">Compact</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-compat" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'compat')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>Category Pair</option><option>Category</option><option>All Products</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'compat')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'compat')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>Category A</th><th>Category B</th><th>Co-load Allowed</th><th>Base</th><th>Reason</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Beverages</td><td>Confectionery</td><td><input class="cell-input bulk-target" value="No" data-base="Yes" onchange="markDirty(this)"></td><td class="mono base-val">Yes</td><td class="mono">No conflict</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Dairy</td><td>Beverages</td><td><input class="cell-input bulk-target" value="No" data-base="No" onchange="markDirty(this)"></td><td class="mono base-val">No</td><td class="mono">Cold-chain separation</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Culinary</td><td>Confectionery</td><td><input class="cell-input bulk-target" value="Yes" data-base="Yes" onchange="markDirty(this)"></td><td class="mono base-val">Yes</td><td class="mono">No conflict</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Dairy</td><td>Culinary</td><td><input class="cell-input bulk-target" value="No" data-base="No" onchange="markDirty(this)"></td><td class="mono base-val">No</td><td class="mono">Cold-chain separation</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>Beverages</td><td>Culinary</td><td><input class="cell-input bulk-target" value="Yes" data-base="Yes" onchange="markDirty(this)"></td><td class="mono base-val">Yes</td><td class="mono">No conflict</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-promo" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'promo')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>SKU-Week</option><option>SKU</option><option>Category</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'promo')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'promo')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>SKU</th><th>Week</th><th>Promo Uplift (%)</th><th>Base</th><th>Promo Type</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-1042</td><td>Wk 27</td><td><input class="cell-input bulk-target" value="15%" data-base="15%" onchange="markDirty(this)"></td><td class="mono base-val">15%</td><td class="mono">Price-off</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-1088</td><td>Wk 27</td><td><input class="cell-input bulk-target" value="30%" data-base="25%" onchange="markDirty(this)"></td><td class="mono base-val">25%</td><td class="mono">Bundle</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-2201</td><td>Wk 28</td><td><input class="cell-input bulk-target" value="10%" data-base="10%" onchange="markDirty(this)"></td><td class="mono base-val">10%</td><td class="mono">Display</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-2340</td><td>Wk 28</td><td><input class="cell-input bulk-target" value="20%" data-base="20%" onchange="markDirty(this)"></td><td class="mono base-val">20%</td><td class="mono">Price-off</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>NES-3015</td><td>Wk 29</td><td><input class="cell-input bulk-target" value="12%" data-base="12%" onchange="markDirty(this)"></td><td class="mono base-val">12%</td><td class="mono">Bundle</td></tr></tbody></table></div></div><div class="input-table-wrap" id="wrap-calendar" style="display:none;"><div class="refresh-strip"><span><span class="refresh-dot"></span>Data last refreshed: <b>Today, 02:00</b></span><button class="btn btn-sm" onclick="refreshInputWrap(this, 'calendar')">Refresh now</button></div><div class="tab-toolbar"><div class="select-pill">Aggregate by: <select onchange="cycleAgg(this)"><option>Distribution Center</option><option>Region</option><option>Country</option></select></div><div class="bulk-toolbar"><label class="bulk-selectall"><input type="checkbox" onclick="toggleSelectAll(this,'calendar')"> Select all</label><span class="bulk-label">Apply</span><input type="number" class="bulk-input" placeholder="%"><span class="bulk-label">% to selected</span><button class="btn btn-sm" onclick="applyBulkUpdate(this,'calendar')">Apply</button></div></div><div class="panel"><table class="data-grid"><thead><th style="width:22px;"></th><th style="width:22px;"></th><th>Distribution Center</th><th>Working Days / Week</th><th>Base</th><th>Holiday Blackouts</th><th>Region</th></thead><tbody><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Klang</td><td><input class="cell-input bulk-target" value="5" data-base="6" onchange="markDirty(this)"></td><td class="mono base-val">6</td><td class="mono">3</td><td class="mono">Central</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Penang</td><td><input class="cell-input bulk-target" value="6" data-base="6" onchange="markDirty(this)"></td><td class="mono base-val">6</td><td class="mono">2</td><td class="mono">North</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Johor Bahru</td><td><input class="cell-input bulk-target" value="6" data-base="6" onchange="markDirty(this)"></td><td class="mono base-val">6</td><td class="mono">3</td><td class="mono">South</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Ipoh</td><td><input class="cell-input bulk-target" value="6" data-base="6" onchange="markDirty(this)"></td><td class="mono base-val">6</td><td class="mono">2</td><td class="mono">North</td></tr><tr><td><span class="dirty-dot"></span></td><td><input type="checkbox" class="row-check"></td><td>DC Kota Kinabalu</td><td><input class="cell-input bulk-target" value="5" data-base="5" onchange="markDirty(this)"></td><td class="mono base-val">5</td><td class="mono">4</td><td class="mono">East Malaysia</td></tr></tbody></table></div></div><div class="save-bar"><div class="save-bar-text"><b id="dirtyCount">0</b> unsaved cell edits</div><div style="display:flex;gap:8px;"><button class="btn btn-ghost" style="color:#fff;" onclick="discardEdits()">Discard</button><button class="btn btn-primary" onclick="saveEdits()">Save &amp; re-optimize</button></div></div></div><div id="scenarioTab-settings" class="opt-settings-block" style="display:none;"><div class="page-head"><div><div class="page-eyebrow">Model configuration</div><h1 class="page-title">Optimization Settings</h1><div class="page-desc">Pick which model this scenario configures, rank its objectives by priority, and switch which constraints the solver must respect on or off.</div><div style="margin-top:8px;display:flex;align-items:center;gap:8px;"><span class="tag tag-accepted">Pre-filled from Optimized — Default</span><span style="font-size:11px;color:var(--text-muted);">Changes here apply to this scenario only</span></div></div><button class="btn" onclick="resetOptSettingsToDefault(this)">Reset to Optimized — Default</button></div><div class="panel"><div class="panel-head"><div class="panel-title">Model</div><span class="mono" style="font-size:11.5px;color:var(--text-muted);">Choose which engine this scenario configures</span></div><div class="panel-body"><select id="modelSelect" class="search-input" style="max-width:360px;font-weight:600;" onchange="selectOptModel(this)"><option value="orion">ORION &mdash; Core order fulfillment optimization</option><option value="al">Alternate Location &mdash; Reassign orders to backup DC / store capacity</option><option value="rdd">RDD (Requested Delivery Date) &mdash; Postpone orders to maximize fulfillment</option><option value="altsku">Alternate SKU &mdash; Substitute an approved SKU when the requested item is unavailable</option><option value="badgoods">Bad Goods &mdash; Reduce salvage loss by rerouting to an Alternate DC</option></select><div data-role="modelDesc" style="font-size:11.5px;color:var(--text-muted);margin-top:8px;">Core order fulfillment optimization: ranks cost, service, transit time and inventory balance for the default plan.</div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">Objective priorities</div><span class="mono" style="font-size:11.5px;color:var(--text-muted);" data-role="priorityPanelNote">P1 solved first &middot; ORION model</span></div><div class="panel-body"><div class="priority-list" data-prioritywrap="orion"><div class="priority-row"><div class="priority-badge">P1</div><div class="priority-info"><div class="obj-label">Cost minimization</div><div class="obj-desc">Transportation + handling + inventory holding cost</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)" disabled>↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P2</div><div class="priority-info"><div class="obj-label">Service level maximization</div><div class="obj-desc">Fill rate + on-time delivery</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P3</div><div class="priority-info"><div class="obj-label">Transit time</div><div class="obj-desc">Minimize DC-to-store transit hours</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P4</div><div class="priority-info"><div class="obj-label">Inventory balance</div><div class="obj-desc">Even utilization across DCs</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)" disabled>↓</button></div></div></div><div class="priority-list" data-prioritywrap="al" style="display:none;"><div class="priority-row"><div class="priority-badge">P1</div><div class="priority-info"><div class="obj-label">Network capacity utilization</div><div class="obj-desc">Reassign to DCs / stores with real spare capacity first</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)" disabled>↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P2</div><div class="priority-info"><div class="obj-label">Minimize reassignment cost delta</div><div class="obj-desc">Keep the added cost of the alternate location as low as possible</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P3</div><div class="priority-info"><div class="obj-label">Customer-tier protection</div><div class="obj-desc">Preserve service for premium / key accounts first</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P4</div><div class="priority-info"><div class="obj-label">Minimize reassignment distance</div><div class="obj-desc">Prefer the nearest feasible alternate location</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)" disabled>↓</button></div></div></div><div class="priority-list" data-prioritywrap="rdd" style="display:none;"><div class="priority-row"><div class="priority-badge">P1</div><div class="priority-info"><div class="obj-label">Maximize order fulfillment</div><div class="obj-desc">Postpone rather than reject or stock out wherever possible</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)" disabled>↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P2</div><div class="priority-info"><div class="obj-label">COF improvement threshold</div><div class="obj-desc">Only postpone an order if doing so improves Cost of Fulfillment (COF) by at least <input type="number" id="rddCofThreshold" value="5" min="0" max="50" step="0.5" style="width:52px;border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-size:11.5px;font-family:var(--font-mono);margin:0 2px;" onclick="event.stopPropagation()">% vs. shipping unchanged &mdash; user-defined threshold</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P3</div><div class="priority-info"><div class="obj-label">Minimize delivery date slippage</div><div class="obj-desc">Keep the postponed RDD as close to the original promise as possible</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P4</div><div class="priority-info"><div class="obj-label">Respect store receiving calendar</div><div class="obj-desc">Avoid dates blocked on the destination store’s calendar</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)" disabled>↓</button></div></div></div><div class="priority-list" data-prioritywrap="altsku" style="display:none;"><div class="priority-row"><div class="priority-badge">P1</div><div class="priority-info"><div class="obj-label">Maximize substitution fill rate</div><div class="obj-desc">Fill the order with an approved substitute SKU before rejecting</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)" disabled>↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P2</div><div class="priority-info"><div class="obj-label">Expiry compliance</div><div class="obj-desc">Never ship a substitute unit below the minimum remaining shelf life</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P3</div><div class="priority-info"><div class="obj-label">Minimize substitution cost</div><div class="obj-desc">Prefer the lowest-cost approved substitute when more than one qualifies</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)" disabled>↓</button></div></div></div><div class="priority-list" data-prioritywrap="badgoods" style="display:none;"><div class="priority-row"><div class="priority-badge">P1</div><div class="priority-info"><div class="obj-label">Maximize salvage recovery value</div><div class="obj-desc">Reduce write-off loss by rerouting bad-goods stock to the nearest Alternate DC equipped to liquidate or re-grade it</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)" disabled>↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P2</div><div class="priority-info"><div class="obj-label">Minimize reroute distance to salvage DC</div><div class="obj-desc">Only reroute to an Alternate DC if it is within <input type="number" id="badgoodsMaxDist" value="150" min="0" max="1000" step="10" style="width:52px;border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-size:11.5px;font-family:var(--font-mono);margin:0 2px;" onclick="event.stopPropagation()">km &mdash; otherwise write off locally</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P3</div><div class="priority-info"><div class="obj-label">Minimize quarantine dwell time</div><div class="obj-desc">Clear holds and re-release sellable stock as fast as policy allows</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)" disabled>↓</button></div></div></div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">Constraints</div></div><div class="panel-body"><div class="cap-subtabs" data-role="constraintSubtabs"><button class="on" data-tab="common" onclick="showConstraintTab('common', this)">Common Constraints</button><button data-tab="al" onclick="showConstraintTab('al', this)">AL Constraints</button><button data-tab="rdd" onclick="showConstraintTab('rdd', this)">RDD Constraints</button><button data-tab="altsku" onclick="showConstraintTab('altsku', this)">Alt SKU Constraints</button><button data-tab="badgoods" onclick="showConstraintTab('badgoods', this)">Bad Goods Constraints</button></div><div class="constraint-tab-wrap" data-constraintwrap="common"><div class="constraint-row"><div><div class="constraint-name">Vehicle capacity</div><div class="constraint-desc">Per-route payload and volume limits</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">DC storage capacity</div><div class="constraint-desc">Max SKU-units per distribution center</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Minimum order quantity</div><div class="constraint-desc">Store-level MOQ per SKU</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Delivery time window</div><div class="constraint-desc">Store receiving-dock hours</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Product compatibility</div><div class="constraint-desc">Cold-chain / hazmat co-loading rules</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Max route distance</div><div class="constraint-desc">Cap single-route distance per vehicle class</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">Off</span><button class="toggle-switch " onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div></div><div class="constraint-tab-wrap" data-constraintwrap="al" style="display:none;"><div class="constraint-row"><div><div class="constraint-name">Alternate location max distance</div><div class="constraint-desc">Cap on how far an alternate DC / store can be from the original</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Alternate location capacity headroom</div><div class="constraint-desc">Require minimum spare capacity before reassigning an order</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Customer-tier protection</div><div class="constraint-desc">Restrict alternate assignment for premium / key accounts</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Max reassignments per order</div><div class="constraint-desc">Limit how many times a single order can be rerouted</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">Off</span><button class="toggle-switch " onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div></div><div class="constraint-tab-wrap" data-constraintwrap="rdd" style="display:none;"><div class="constraint-row"><div><div class="constraint-name">Minimum RDD buffer</div><div class="constraint-desc">Minimum days required between decision date and requested delivery date</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Promise-date lock for confirmed orders</div><div class="constraint-desc">Do not push the requested delivery date once a customer has confirmed it</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Peak-season RDD extension</div><div class="constraint-desc">Allow a wider requested-delivery-date window during declared peak periods</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">Off</span><button class="toggle-switch " onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Store receiving calendar</div><div class="constraint-desc">Respect store-specific delivery calendar blackout days</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div></div><div class="constraint-tab-wrap" data-constraintwrap="altsku" style="display:none;"><div class="constraint-row"><div><div class="constraint-name">Max substitution rate per SKU</div><div class="constraint-desc">Cap the share of orders filled via a substitute SKU</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Expiry buffer</div><div class="constraint-desc">Minimum shelf life remaining required for a substitute unit to ship</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Substitute compatibility required</div><div class="constraint-desc">Only cold-chain / hazmat-compatible substitutes are considered</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div></div><div class="constraint-tab-wrap" data-constraintwrap="badgoods" style="display:none;"><div class="constraint-row"><div><div class="constraint-name">Quarantine before re-release</div><div class="constraint-desc">Minimum hold period for bad-goods stock before it re-enters supply</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Route to Alternate DC for salvage</div><div class="constraint-desc">Send eligible bad-goods stock to a designated salvage / liquidation DC instead of a local write-off</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Write-off threshold</div><div class="constraint-desc">Auto-flag a batch for write-off above a loss-value threshold</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">Off</span><button class="toggle-switch " onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div></div></div></div></div></div>
+
+    <div class="screen" id="screen-consensus"><div class="page-head"><div><div class="page-eyebrow">Night refresh &rarr; morning run &rarr; analysis &rarr; negotiate &rarr; publish</div><h1 class="page-title">Consensus &amp; Publish</h1><div class="page-desc">Capacity refreshes overnight, the model runs every morning, and the planner can pull an ad-hoc refresh and rerun whenever a new bottleneck shows up. Nothing becomes the execution plan for Week 27 until every team involved has signed off on the same version.</div></div></div><div class="publish-banner" id="publishBanner">&#10003; Plan published &mdash; <b id="publishedVersionText">v3</b> is now the committed execution plan for Week 27.</div><div class="step-tracker" id="stepTracker"><div class="step-card done"><div class="step-num">1</div><div class="step-title">Nightly Capacity Refresh</div><div class="step-meta">Automated &middot; 02:00</div><div class="step-status done">Complete</div></div><div class="step-card done"><div class="step-num">2</div><div class="step-title">Morning Model Run</div><div class="step-meta">Automated &middot; 06:00</div><div class="step-status done">Complete</div></div><div class="step-card done"><div class="step-num">3</div><div class="step-title">Planner Analysis</div><div class="step-meta">Planning team &middot; 06:30&ndash;09:00</div><div class="step-status done">Complete</div></div><div class="step-card active"><div class="step-num">4</div><div class="step-title">Ad-hoc Refresh &amp; Rerun</div><div class="step-meta">As needed, on new bottlenecks</div><div class="step-status active">In progress</div></div><div class="step-card pending"><div class="step-num">5</div><div class="step-title">Cross-Team Negotiation</div><div class="step-meta">Planning + Ops + Transport + Fulfillment</div><div class="step-status pending">Pending</div></div><div class="step-card pending"><div class="step-num">6</div><div class="step-title">Final Publish</div><div class="step-meta">After full consensus</div><div class="step-status pending">Pending</div></div></div><div style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start;"><div><div class="panel"><div class="panel-head"><div class="panel-title">Today’s Cycle Log &middot; Week 27</div><span class="mono" style="font-size:11px;color:var(--text-muted);">Model version: <b id="modelVersionTag">v3</b></span></div><div class="panel-body"><div class="timeline" id="consensusTimeline"><div class="timeline-item"><div class="timeline-rail"><div class="timeline-dot default"></div><div class="timeline-line"></div></div><div class="timeline-body"><div class="timeline-time">02:00</div><div class="timeline-text"><b>Capacity data refreshed from WMS &amp; TMS</b></div><div class="timeline-text" style="color:var(--text-muted);margin-top:2px;">Warehouse dock capacity and transportation capacity actuals loaded for all 8 DCs, with backlog carried forward from the prior day.</div></div></div><div class="timeline-item"><div class="timeline-rail"><div class="timeline-dot default"></div><div class="timeline-line"></div></div><div class="timeline-body"><div class="timeline-time">06:00</div><div class="timeline-text"><b>Fulfillment model run completed &middot; <b>v1</b></b></div><div class="timeline-text" style="color:var(--text-muted);margin-top:2px;">1,840 orders planned across the network; 428 orders flagged where a dock or transport capacity constraint made the default plan infeasible.</div></div></div><div class="timeline-item"><div class="timeline-rail"><div class="timeline-dot default"></div><div class="timeline-line"></div></div><div class="timeline-body"><div class="timeline-time">08:15</div><div class="timeline-text"><b>Planner flagged a bottleneck</b></div><div class="timeline-text" style="color:var(--text-muted);margin-top:2px;">DC Klang outbound dock trending 6% over the planned capacity for Thursday, with Monday&ndash;Wednesday backlog not yet cleared.</div></div></div><div class="timeline-item"><div class="timeline-rail"><div class="timeline-dot rerun"></div><div class="timeline-line"></div></div><div class="timeline-body"><div class="timeline-time">08:40</div><div class="timeline-text"><b>Ad-hoc capacity refresh triggered &middot; rerun to <b>v2</b></b></div><div class="timeline-text" style="color:var(--text-muted);margin-top:2px;">Updated mid-morning actuals pulled on demand; model rerun to incorporate the new DC Klang dock constraint rather than waiting for tonight’s cycle.</div></div></div><div class="timeline-item"><div class="timeline-rail"><div class="timeline-dot default"></div><div class="timeline-line"></div></div><div class="timeline-body"><div class="timeline-time">09:10</div><div class="timeline-text"><b>Negotiation opened with Transport &amp; Logistics</b></div><div class="timeline-text" style="color:var(--text-muted);margin-top:2px;">Proposed activating 6 spot-contract trucks on the Klang &rarr; Johor Bahru lane to absorb the overflow instead of postponing or rejecting orders.</div></div></div><div class="timeline-item"><div class="timeline-rail"><div class="timeline-dot rerun"></div><div class="timeline-line"></div></div><div class="timeline-body"><div class="timeline-time">09:45</div><div class="timeline-text"><b>Model rerun to <b>v3</b> with spot capacity</b></div><div class="timeline-text" style="color:var(--text-muted);margin-top:2px;">54 orders moved from Postpone to Alternate Location / Alternate DC once the extra spot truck capacity was reflected in Capacity Scenarios.</div></div></div><div class="timeline-item"><div class="timeline-rail"><div class="timeline-dot default"></div></div><div class="timeline-body"><div class="timeline-time">10:30</div><div class="timeline-text"><b>Consensus reached on v3</b></div><div class="timeline-text" style="color:var(--text-muted);margin-top:2px;">Warehouse Ops and Transport &amp; Logistics have signed off; Fulfillment review in progress.</div></div></div></div></div></div></div><div><div class="panel"><div class="panel-head"><div class="panel-title">Team Sign-off</div><span class="mono" style="font-size:11px;color:var(--text-muted);" id="signoffCount">2 / 3 signed off</span></div><div class="panel-body"><div class="signoff-row" data-team="0"><div class="signoff-team"><b>Warehouse Operations</b><span>Represented by DC network leads</span><span style="font-size:11px;color:var(--text-faint);margin-top:3px;max-width:320px;">Dock capacity and backlog numbers match our actuals.</span></div><div style="display:flex;align-items:center;gap:10px;"><span class="signoff-status signed" id="signoffStatus-0">Signed off</span></div></div><div class="signoff-row" data-team="1"><div class="signoff-team"><b>Transport &amp; Logistics</b><span>Represented by fleet &amp; carrier management</span><span style="font-size:11px;color:var(--text-faint);margin-top:3px;max-width:320px;">Spot capacity on Klang&ndash;JB confirmed and booked.</span></div><div style="display:flex;align-items:center;gap:10px;"><span class="signoff-status signed" id="signoffStatus-1">Signed off</span></div></div><div class="signoff-row" data-team="2"><div class="signoff-team"><b>Fulfillment</b><span>Represented by order fulfillment &amp; CS leads</span><span style="font-size:11px;color:var(--text-faint);margin-top:3px;max-width:320px;">Reviewing the 96 postponed orders against customer commitments.</span></div><div style="display:flex;align-items:center;gap:10px;"><span class="signoff-status pending" id="signoffStatus-2">Yet to Sign-off</span><button class="btn btn-sm btn-success-outline" onclick="signOffTeam(this)">Mark signed off</button></div></div></div></div><div style="height:16px;"></div><div style="display:flex;gap:10px;margin-top:4px;"><button class="btn" onclick="triggerAdhocRerun()">Trigger ad-hoc refresh &amp; rerun</button><button class="btn btn-primary" id="publishBtn" onclick="publishPlan()">Publish final plan</button></div></div></div></div>
+
+    <!-- ===== REGIONS & ACCESS ===== -->
+    <div class="screen" id="screen-regions">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Workspace admin</div>
+          <h1 class="page-title">Regions &amp; Access</h1>
+          <div class="page-desc">Manage which markets you can plan for and who else has access to each one.</div>
+        </div>
+        <button class="btn btn-primary">+ Invite user</button>
+      </div>
+
+      <div class="grid-kpi" style="grid-template-columns:repeat(4,1fr);">
+        <div class="card kpi-card region-card sel-region">
+          <div class="kpi-label">Malaysia</div>
+          <div class="kpi-val" style="margin-bottom:6px;">8 DCs</div>
+          <div style="font-size:11.5px;color:var(--text-muted);">4,100 stores · 14 planners</div>
+          <div style="margin-top:10px;"><span class="tag tag-accepted">Active</span></div>
+        </div>
+        <div class="card kpi-card">
+          <div class="kpi-label">Singapore</div>
+          <div class="kpi-val" style="margin-bottom:6px;">2 DCs</div>
+          <div style="font-size:11.5px;color:var(--text-muted);">640 stores · 5 planners</div>
+          <div style="margin-top:10px;"><span class="tag tag-pending">View only</span></div>
+        </div>
+        <div class="card kpi-card">
+          <div class="kpi-label">Thailand</div>
+          <div class="kpi-val" style="margin-bottom:6px;">5 DCs</div>
+          <div style="font-size:11.5px;color:var(--text-muted);">2,300 stores · 9 planners</div>
+          <div style="margin-top:10px;"><span class="tag tag-rejected">No access</span></div>
+        </div>
+        <div class="card kpi-card">
+          <div class="kpi-label">Vietnam</div>
+          <div class="kpi-val" style="margin-bottom:6px;">3 DCs</div>
+          <div style="font-size:11.5px;color:var(--text-muted);">1,150 stores · 6 planners</div>
+          <div style="margin-top:10px;"><span class="tag tag-rejected">No access</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Malaysia — team access</div></div>
+        <table>
+          <thead><tr><th>Name</th><th>Role</th><th>Access level</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>Bala Krishnan</td><td>Optimization Lead</td><td><span class="tag tag-accepted">Full access</span></td><td class="row-actions"><button class="icon-btn">⋯</button></td></tr>
+            <tr><td>Priya Nair</td><td>Supply Planner</td><td><span class="tag tag-accepted">Full access</span></td><td class="row-actions"><button class="icon-btn">⋯</button></td></tr>
+            <tr><td>Wei Ling Tan</td><td>Regional Exec</td><td><span class="tag tag-pending">View only</span></td><td class="row-actions"><button class="icon-btn">⋯</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== DEFAULT SCENARIO SETTINGS ===== -->
+    <div class="screen" id="screen-defaultsettings">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Optimized — Default configuration</div>
+          <h1 class="page-title">Default Scenario Settings</h1>
+          <div class="page-desc">Schedule, model and constraints used for the Optimized — Default case. New scenarios are pre-filled from these settings and can be changed ad hoc per scenario.</div>
+        </div>
+        <button class="btn btn-primary" onclick="saveDefaultSettings()">Save defaults</button>
+      </div>
+<div class="panel"><div class="panel-head"><div class="panel-title">Schedule</div><span class="mono" style="font-size:11.5px;color:var(--text-muted);">When Optimized — Default re-runs against refreshed input data</span></div><div class="panel-body" style="display:flex;gap:22px;flex-wrap:wrap;"><div class="field" style="min-width:220px;"><label class="field-label">Run frequency</label><select id="defaultScheduleFreq" class="search-input" style="max-width:260px;"><option>Nightly · 02:00</option><option selected>Every 6 hours</option><option>Every 12 hours</option><option>Weekly · Mon 06:00</option><option>Manual only</option></select></div><div class="field" style="min-width:220px;"><label class="field-label">Throughput &amp; capacity data</label><div style="font-size:12.5px;color:var(--text);padding-top:6px;"><span class="refresh-dot"></span> Always refreshed before each run</div></div><div class="field" style="min-width:220px;"><label class="field-label">Last run</label><div class="mono" style="font-size:12.5px;padding-top:6px;">Today, 02:00</div></div><div class="field" style="min-width:220px;"><label class="field-label">Next scheduled run</label><div class="mono" style="font-size:12.5px;padding-top:6px;" id="defaultNextRun">Today, 08:00</div></div></div></div><div id="defaultOptSettingsWrap" class="opt-settings-block"><div class="panel"><div class="panel-head"><div class="panel-title">Model</div><span class="mono" style="font-size:11.5px;color:var(--text-muted);">Choose which engine this scenario configures</span></div><div class="panel-body"><select id="defaultModelSelect" class="search-input" style="max-width:360px;font-weight:600;" onchange="selectOptModel(this)"><option value="orion">ORION &mdash; Core order fulfillment optimization</option><option value="al">Alternate Location &mdash; Reassign orders to backup DC / store capacity</option><option value="rdd">RDD (Requested Delivery Date) &mdash; Postpone orders to maximize fulfillment</option><option value="altsku">Alternate SKU &mdash; Substitute an approved SKU when the requested item is unavailable</option><option value="badgoods">Bad Goods &mdash; Reduce salvage loss by rerouting to an Alternate DC</option></select><div data-role="modelDesc" style="font-size:11.5px;color:var(--text-muted);margin-top:8px;">Core order fulfillment optimization: ranks cost, service, transit time and inventory balance for the default plan.</div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">Objective priorities</div><span class="mono" style="font-size:11.5px;color:var(--text-muted);" data-role="priorityPanelNote">P1 solved first &middot; ORION model</span></div><div class="panel-body"><div class="priority-list" data-prioritywrap="orion"><div class="priority-row"><div class="priority-badge">P1</div><div class="priority-info"><div class="obj-label">Cost minimization</div><div class="obj-desc">Transportation + handling + inventory holding cost</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)" disabled>↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P2</div><div class="priority-info"><div class="obj-label">Service level maximization</div><div class="obj-desc">Fill rate + on-time delivery</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P3</div><div class="priority-info"><div class="obj-label">Transit time</div><div class="obj-desc">Minimize DC-to-store transit hours</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P4</div><div class="priority-info"><div class="obj-label">Inventory balance</div><div class="obj-desc">Even utilization across DCs</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)" disabled>↓</button></div></div></div><div class="priority-list" data-prioritywrap="al" style="display:none;"><div class="priority-row"><div class="priority-badge">P1</div><div class="priority-info"><div class="obj-label">Network capacity utilization</div><div class="obj-desc">Reassign to DCs / stores with real spare capacity first</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)" disabled>↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P2</div><div class="priority-info"><div class="obj-label">Minimize reassignment cost delta</div><div class="obj-desc">Keep the added cost of the alternate location as low as possible</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P3</div><div class="priority-info"><div class="obj-label">Customer-tier protection</div><div class="obj-desc">Preserve service for premium / key accounts first</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P4</div><div class="priority-info"><div class="obj-label">Minimize reassignment distance</div><div class="obj-desc">Prefer the nearest feasible alternate location</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)" disabled>↓</button></div></div></div><div class="priority-list" data-prioritywrap="rdd" style="display:none;"><div class="priority-row"><div class="priority-badge">P1</div><div class="priority-info"><div class="obj-label">Maximize order fulfillment</div><div class="obj-desc">Postpone rather than reject or stock out wherever possible</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)" disabled>↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P2</div><div class="priority-info"><div class="obj-label">COF improvement threshold</div><div class="obj-desc">Only postpone an order if doing so improves Cost of Fulfillment (COF) by at least <input type="number" id="defaultRddCofThreshold" value="5" min="0" max="50" step="0.5" style="width:52px;border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-size:11.5px;font-family:var(--font-mono);margin:0 2px;" onclick="event.stopPropagation()">% vs. shipping unchanged &mdash; user-defined threshold</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P3</div><div class="priority-info"><div class="obj-label">Minimize delivery date slippage</div><div class="obj-desc">Keep the postponed RDD as close to the original promise as possible</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P4</div><div class="priority-info"><div class="obj-label">Respect store receiving calendar</div><div class="obj-desc">Avoid dates blocked on the destination store’s calendar</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)" disabled>↓</button></div></div></div><div class="priority-list" data-prioritywrap="altsku" style="display:none;"><div class="priority-row"><div class="priority-badge">P1</div><div class="priority-info"><div class="obj-label">Maximize substitution fill rate</div><div class="obj-desc">Fill the order with an approved substitute SKU before rejecting</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)" disabled>↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P2</div><div class="priority-info"><div class="obj-label">Expiry compliance</div><div class="obj-desc">Never ship a substitute unit below the minimum remaining shelf life</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P3</div><div class="priority-info"><div class="obj-label">Minimize substitution cost</div><div class="obj-desc">Prefer the lowest-cost approved substitute when more than one qualifies</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)" disabled>↓</button></div></div></div><div class="priority-list" data-prioritywrap="badgoods" style="display:none;"><div class="priority-row"><div class="priority-badge">P1</div><div class="priority-info"><div class="obj-label">Maximize salvage recovery value</div><div class="obj-desc">Reduce write-off loss by rerouting bad-goods stock to the nearest Alternate DC equipped to liquidate or re-grade it</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)" disabled>↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P2</div><div class="priority-info"><div class="obj-label">Minimize reroute distance to salvage DC</div><div class="obj-desc">Only reroute to an Alternate DC if it is within <input type="number" id="defaultBadgoodsMaxDist" value="150" min="0" max="1000" step="10" style="width:52px;border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-size:11.5px;font-family:var(--font-mono);margin:0 2px;" onclick="event.stopPropagation()">km &mdash; otherwise write off locally</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)">↓</button></div></div><div class="priority-row"><div class="priority-badge">P3</div><div class="priority-info"><div class="obj-label">Minimize quarantine dwell time</div><div class="obj-desc">Clear holds and re-release sellable stock as fast as policy allows</div></div><div class="priority-arrows"><button onclick="movePriority(this,-1)">↑</button><button onclick="movePriority(this,1)" disabled>↓</button></div></div></div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">Constraints</div></div><div class="panel-body"><div class="cap-subtabs" data-role="constraintSubtabs"><button class="on" data-tab="common" onclick="showConstraintTab('common', this)">Common Constraints</button><button data-tab="al" onclick="showConstraintTab('al', this)">AL Constraints</button><button data-tab="rdd" onclick="showConstraintTab('rdd', this)">RDD Constraints</button><button data-tab="altsku" onclick="showConstraintTab('altsku', this)">Alt SKU Constraints</button><button data-tab="badgoods" onclick="showConstraintTab('badgoods', this)">Bad Goods Constraints</button></div><div class="constraint-tab-wrap" data-constraintwrap="common"><div class="constraint-row"><div><div class="constraint-name">Vehicle capacity</div><div class="constraint-desc">Per-route payload and volume limits</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">DC storage capacity</div><div class="constraint-desc">Max SKU-units per distribution center</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Minimum order quantity</div><div class="constraint-desc">Store-level MOQ per SKU</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Delivery time window</div><div class="constraint-desc">Store receiving-dock hours</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Product compatibility</div><div class="constraint-desc">Cold-chain / hazmat co-loading rules</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Max route distance</div><div class="constraint-desc">Cap single-route distance per vehicle class</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">Off</span><button class="toggle-switch " onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div></div><div class="constraint-tab-wrap" data-constraintwrap="al" style="display:none;"><div class="constraint-row"><div><div class="constraint-name">Alternate location max distance</div><div class="constraint-desc">Cap on how far an alternate DC / store can be from the original</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Alternate location capacity headroom</div><div class="constraint-desc">Require minimum spare capacity before reassigning an order</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Customer-tier protection</div><div class="constraint-desc">Restrict alternate assignment for premium / key accounts</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Max reassignments per order</div><div class="constraint-desc">Limit how many times a single order can be rerouted</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">Off</span><button class="toggle-switch " onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div></div><div class="constraint-tab-wrap" data-constraintwrap="rdd" style="display:none;"><div class="constraint-row"><div><div class="constraint-name">Minimum RDD buffer</div><div class="constraint-desc">Minimum days required between decision date and requested delivery date</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Promise-date lock for confirmed orders</div><div class="constraint-desc">Do not push the requested delivery date once a customer has confirmed it</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Peak-season RDD extension</div><div class="constraint-desc">Allow a wider requested-delivery-date window during declared peak periods</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">Off</span><button class="toggle-switch " onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Store receiving calendar</div><div class="constraint-desc">Respect store-specific delivery calendar blackout days</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div></div><div class="constraint-tab-wrap" data-constraintwrap="altsku" style="display:none;"><div class="constraint-row"><div><div class="constraint-name">Max substitution rate per SKU</div><div class="constraint-desc">Cap the share of orders filled via a substitute SKU</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Expiry buffer</div><div class="constraint-desc">Minimum shelf life remaining required for a substitute unit to ship</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Substitute compatibility required</div><div class="constraint-desc">Only cold-chain / hazmat-compatible substitutes are considered</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div></div><div class="constraint-tab-wrap" data-constraintwrap="badgoods" style="display:none;"><div class="constraint-row"><div><div class="constraint-name">Quarantine before re-release</div><div class="constraint-desc">Minimum hold period for bad-goods stock before it re-enters supply</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Route to Alternate DC for salvage</div><div class="constraint-desc">Send eligible bad-goods stock to a designated salvage / liquidation DC instead of a local write-off</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">On</span><button class="toggle-switch on" onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div><div class="constraint-row"><div><div class="constraint-name">Write-off threshold</div><div class="constraint-desc">Auto-flag a batch for write-off above a loss-value threshold</div></div><div style="display:flex;align-items:center;gap:9px;"><span class="toggle-label">Off</span><button class="toggle-switch " onclick="toggleConstraint(this)"><span class="knob"></span></button></div></div></div></div></div></div>
+    </div>
+
+
+    </div>
+</div>
+
+<!-- ============ CHAT DRAWER ============ -->
+<button class="chat-toggle" onclick="toggleChat()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="dot"></span></button>
+
+<div class="chat-drawer" id="chatDrawer">
+  <div class="chat-head">
+    <div class="chat-head-title">
+      <div class="chat-avatar">AI</div>
+      <div>
+        <div style="font-weight:600;font-size:13.5px;">Explain &amp; Validate</div>
+        <div class="chat-ctx" id="chatCtx">context: executive summary</div>
+      </div>
+    </div>
+    <button class="icon-btn" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <div class="msg bot">Hi Bala — ask me why any recommendation was made, or say <b>"validate this page"</b> and I'll check the current view against the model's constraints.</div>
+  </div>
+  <div class="chat-suggest">
+    <span class="suggest-chip" onclick="askPreset('Why is stockout rate worse in the optimized plan?')">Why is stockout worse?</span>
+    <span class="suggest-chip" onclick="askPreset('Validate this page')">Validate this page</span>
+  </div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="Ask about this recommendation…" onkeydown="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()">↑</button>
+  </div>
+</div>
+
+<script>
+function selectRegion(el){
+  document.querySelectorAll('.region-opt').forEach(r=>r.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function enterApp(){
+  document.getElementById('welcomeScreen').style.display='none';
+  document.getElementById('appShell').style.display='flex';
+  navFromRail('recanalysis', null);
+}
+
+const titles = {
+  recanalysis:['Recommendation Analysis','1,580 recommendations \u00b7 1,840 orders re-planned'],
+  consensus:['Consensus & Publish','Week 27 \u00b7 pending final sign-off'],
+  regions:['Regions & Access','Workspace admin'],
+  defaultsettings:['Default Scenario Settings','Optimized — Default · schedule, model & constraints'],
+  newscenario:['Create New Scenario','Name it, then configure inputs & settings'],
+};
+function showScreen(id, btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.rail-item').forEach(b=>b.classList.remove('active'));
+  if(!btn) btn = document.querySelector('.rail-item[data-screen="'+id+'"]');
+  if(btn) btn.classList.add('active');
+  if(titles[id]){
+    document.getElementById('topbarTitle').textContent = titles[id][0];
+    document.getElementById('topbarSub').textContent = titles[id][1];
+    document.getElementById('chatCtx').textContent = 'context: '+titles[id][0].toLowerCase();
+  }
+}
+function navFromRail(id, btn){
+  showScreen(id, btn);
+}
+
+function setStatus(btn,status){
+  const row = btn.closest('tr');
+  const tagCell = row.querySelector('.tag');
+  tagCell.className = 'tag tag-'+status;
+  tagCell.textContent = status.charAt(0).toUpperCase()+status.slice(1);
+  row.dataset.status = status;
+  applyRecFilters();
+}
+function bulkAction(type){
+  document.querySelectorAll('#unifiedRecsTable tbody tr').forEach(row=>{
+    if(row.style.display === 'none') return;
+    const tag = row.querySelector('.tag');
+    if(!tag || !tag.classList.contains('tag-pending')) return;
+    const status = type==='accept' ? 'accepted' : 'rejected';
+    tag.className = 'tag tag-'+status;
+    tag.textContent = status.charAt(0).toUpperCase()+status.slice(1);
+    row.dataset.status = status;
+  });
+  applyRecFilters();
+}
+
+// ----- new scenario wizard -----
+function showScenarioConfigTab(id, btn){
+  document.querySelectorAll('#scenarioConfigTabs button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('scenarioTab-inputs').style.display = (id === 'inputs') ? 'block' : 'none';
+  document.getElementById('scenarioTab-settings').style.display = (id === 'settings') ? 'block' : 'none';
+}
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function addScenarioOption(name){
+  const label = name + ' (draft)';
+  document.querySelectorAll('.scenario-select').forEach(sel=>{
+    const opt = document.createElement('option');
+    opt.textContent = label;
+    sel.insertBefore(opt, sel.firstChild);
+    sel.value = label;
+  });
+}
+function syncScenarioSelects(sel){
+  const val = sel.value;
+  document.querySelectorAll('.scenario-select').forEach(s=>{ if(s !== sel){ s.value = val; } });
+}
+function finishNewScenario(){
+  const nameInput = document.getElementById('newScenarioName');
+  const name = (nameInput.value || '').trim() || 'Untitled scenario';
+  addScenarioOption(name);
+  const capTag = document.getElementById('capacityRefreshedTag');
+  if(capTag) capTag.style.display = 'inline-flex';
+  showScreen('recanalysis', document.querySelector('.rail-item[data-screen="recanalysis"]'));
+}
+
+let dirty = 0;
+function refreshChangedHighlight(input){
+  if(input.value !== input.dataset.base){ input.classList.add('cell-changed'); }
+  else { input.classList.remove('cell-changed'); }
+}
+function markDirty(input){
+  const dot = input.closest('tr').querySelector('.dirty-dot');
+  if(dot.style.visibility!=='visible'){ dirty++; dot.style.visibility='visible'; }
+  document.getElementById('dirtyCount').textContent = dirty;
+  input.dataset.current = input.value;
+  refreshChangedHighlight(input);
+}
+function saveDefaultSettings(){
+  const btn = document.querySelector('#screen-defaultsettings .btn-primary');
+  const freq = document.getElementById('defaultScheduleFreq').value;
+  const old = btn.textContent;
+  btn.textContent = 'Saved — ' + freq;
+  setTimeout(()=>{ btn.textContent = old; }, 2200);
+}
+function saveEdits(){
+  document.querySelectorAll('.dirty-dot').forEach(d=>d.style.visibility='hidden');
+  dirty = 0;
+  document.getElementById('dirtyCount').textContent = dirty;
+  const bar = document.querySelector('.save-bar-text');
+  bar.innerHTML = '<b>Saved.</b> Re-optimization queued for this cycle.';
+  setTimeout(()=>{ bar.innerHTML = '<b>0</b> unsaved cell edits'; }, 2600);
+}
+function discardEdits(){
+  document.querySelectorAll('.dirty-dot').forEach(d=>d.style.visibility='hidden');
+  dirty = 0;
+  document.getElementById('dirtyCount').textContent = dirty;
+}
+
+document.querySelectorAll('.input-table-wrap input.cell-input').forEach(inp=>refreshChangedHighlight(inp));
+
+// input data tabs
+function showInputTab(tab, btn){
+  document.querySelectorAll('#scenarioTab-inputs .filter-row .chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.input-table-wrap').forEach(w=>w.style.display='none');
+  document.getElementById('wrap-'+tab).style.display='block';
+}
+
+// input data: Capacity / Inventory / Master table groups
+const inputGroups = {
+  capacity: ['throughput','lanes','trucks'],
+  inventory: ['demand','safetystock','invsnapshot','promo'],
+  master: ['skumaster','storemaster','costrates','freight','leadtime','deliverywindow','compat','calendar']
+};
+function showInputGroup(group, btn){
+  document.querySelectorAll('#inputGroupTabs button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const domains = inputGroups[group];
+  document.querySelectorAll('#scenarioTab-inputs .filter-row .chip[data-domain]').forEach(c=>{
+    c.style.display = domains.includes(c.dataset.domain) ? 'inline-flex' : 'none';
+  });
+  const firstChip = document.querySelector('#scenarioTab-inputs .filter-row .chip[data-domain="'+domains[0]+'"]');
+  if(firstChip) showInputTab(domains[0], firstChip);
+}
+
+// input data: per-domain "refresh latest data" (mirrors the Capacity Scenarios refresh)
+function jitterMonoText(el, minPct, maxPct){
+  const raw = el.textContent.trim();
+  if(!raw || raw === '–' || raw === '—') return;
+  const hasComma = raw.indexOf(',') !== -1;
+  const hasPercent = raw.indexOf('%') !== -1;
+  const hasDecimal = raw.indexOf('.') !== -1 && !hasComma;
+  const numeric = parseFloat(raw.replace(/[^0-9.-]/g,''));
+  if(isNaN(numeric)) return;
+  const pct = (minPct + Math.random()*(maxPct-minPct)) * (Math.random() < 0.5 ? -1 : 1);
+  const next = numeric * (1 + pct/100);
+  let out;
+  if(hasPercent){ out = Math.max(0, Math.min(100, Math.round(next))) + '%'; }
+  else if(hasDecimal){ out = next.toFixed(1); }
+  else if(hasComma){ out = Math.round(next).toLocaleString('en-US'); }
+  else { out = Math.round(next).toString(); }
+  if(out === raw) return;
+  el.textContent = out;
+  flashCell(el);
+}
+function refreshInputWrap(btn, wrapId){
+  const wrap = document.getElementById('wrap-'+wrapId);
+  if(!wrap) return;
+  const stamp = wrap.querySelector('.refresh-strip b');
+  if(stamp){
+    const now = new Date();
+    const hh = now.getHours().toString().padStart(2,'0');
+    const mm = now.getMinutes().toString().padStart(2,'0');
+    stamp.textContent = 'Just now, '+hh+':'+mm;
+  }
+  wrap.querySelectorAll('table.data-grid tbody td.mono:not(.base-val)').forEach(td=>jitterMonoText(td, 1, 5));
+  const old = btn.textContent;
+  btn.textContent = 'Refreshed';
+  setTimeout(()=>{ btn.textContent = old; }, 1600);
+}
+function cycleAgg(sel){
+  // Hook reserved for re-aggregating the visible table to the selected hierarchy level.
+}
+function toggleSelectAll(cb, wrapId){
+  const wrap = document.getElementById('wrap-'+wrapId);
+  if(!wrap) return;
+  wrap.querySelectorAll('.row-check').forEach(r=>{ r.checked = cb.checked; });
+}
+function applyBulkUpdate(btn, wrapId){
+  const toolbar = btn.closest('.bulk-toolbar');
+  const pctInput = toolbar.querySelector('.bulk-input');
+  const pct = parseFloat(pctInput.value);
+  if(isNaN(pct)) return;
+  const wrap = document.getElementById('wrap-'+wrapId);
+  const checked = wrap.querySelectorAll('.row-check:checked');
+  checked.forEach(cb=>{
+    const row = cb.closest('tr');
+    const inp = row.querySelector('.bulk-target');
+    if(!inp) return;
+    const raw = inp.value;
+    const hasComma = raw.indexOf(',') !== -1;
+    const hasPercent = raw.indexOf('%') !== -1;
+    const hasDecimal = raw.indexOf('.') !== -1 && !hasComma;
+    const numeric = parseFloat(raw.replace(/[^0-9.-]/g,''));
+    if(isNaN(numeric)) return;
+    const next = numeric * (1 + pct/100);
+    let out = hasDecimal ? next.toFixed(2) : Math.round(next).toString();
+    if(hasComma){ out = Number(out).toLocaleString('en-US'); }
+    if(hasPercent){ out = out + '%'; }
+    inp.value = out;
+    markDirty(inp);
+  });
+  pctInput.value = '';
+}
+
+// objective priority reordering
+function movePriority(btn, dir){
+  const row = btn.closest('.priority-row');
+  const list = row.closest('.priority-list');
+  const sib = dir === -1 ? row.previousElementSibling : row.nextElementSibling;
+  if(!sib) return;
+  if(dir === -1){ list.insertBefore(row, sib); } else { list.insertBefore(sib, row); }
+  renumberPriorities(list);
+}
+function renumberPriorities(list){
+  const rows = list.querySelectorAll('.priority-row');
+  rows.forEach((row, i)=>{
+    row.querySelector('.priority-badge').textContent = 'P'+(i+1);
+    const ups = row.querySelectorAll('.priority-arrows button')[0];
+    const downs = row.querySelectorAll('.priority-arrows button')[1];
+    ups.disabled = (i === 0);
+    downs.disabled = (i === rows.length-1);
+  });
+}
+
+// constraint on/off toggle
+function toggleConstraint(btn){
+  btn.classList.toggle('on');
+  btn.previousElementSibling.textContent = btn.classList.contains('on') ? 'On' : 'Off';
+}
+
+// optimization settings: model selector + tabbed constraints
+const modelConstraintTab = {orion:'common', al:'al', rdd:'rdd', altsku:'altsku', badgoods:'badgoods'};
+const modelInfo = {
+  orion: {label:'ORION model', desc:'Core order fulfillment optimization: ranks cost, service, transit time and inventory balance for the default plan.'},
+  al: {label:'Alternate Location model', desc:'Reassigns orders to backup DC or store capacity when the primary location cannot fulfill them.'},
+  rdd: {label:'RDD (Requested Delivery Date) model', desc:'Postpones orders to maximize overall fulfillment — but only when postponing improves Cost of Fulfillment (COF) by at least the user-defined threshold below.'},
+  altsku: {label:'Alternate SKU model', desc:'Fills an order with an approved substitute SKU when the requested item is unavailable or quality-flagged, honoring substitution rate and expiry rules.'},
+  badgoods: {label:'Bad Goods model', desc:'Reduces salvage loss on quality-exception stock by rerouting it to the nearest Alternate DC equipped to liquidate or re-grade it, instead of writing it off locally.'}
+};
+function resetOptSettingsToDefault(btn){
+  const root = btn.closest('.opt-settings-block');
+  const sel = root.querySelector('#modelSelect, select[id$="ModelSelect"]');
+  if(!sel) return;
+  sel.value = 'orion';
+  selectOptModel(sel);
+  const old = btn.textContent;
+  btn.textContent = 'Reset to Optimized — Default ✓';
+  setTimeout(()=>{ btn.textContent = old; }, 1800);
+}
+function selectOptModel(el){
+  const root = el.closest('.opt-settings-block');
+  const model = el.value;
+  root.querySelectorAll('.priority-list').forEach(p=>p.style.display='none');
+  root.querySelector('[data-prioritywrap="'+model+'"]').style.display='block';
+  root.querySelector('[data-role="priorityPanelNote"]').textContent = 'P1 solved first · '+modelInfo[model].label;
+  root.querySelector('[data-role="modelDesc"]').textContent = modelInfo[model].desc;
+  const tab = modelConstraintTab[model] || 'common';
+  const tabBtn = root.querySelector('[data-role="constraintSubtabs"] button[data-tab="'+tab+'"]');
+  if(tabBtn) showConstraintTab(tab, tabBtn);
+}
+function showConstraintTab(id, btn){
+  const root = btn.closest('.opt-settings-block');
+  root.querySelectorAll('[data-role="constraintSubtabs"] button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  root.querySelectorAll('.constraint-tab-wrap').forEach(w=>w.style.display='none');
+  root.querySelector('[data-constraintwrap="'+id+'"]').style.display='block';
+}
+
+// recommendation analysis: chart-to-table filtering (type + status combined)
+var recFilterCat = 'all';
+var recFilterStatus = 'all';
+function filterRecAnalysis(cat){
+  recFilterCat = cat;
+  document.querySelectorAll('#screen-recanalysis .chart-ph[data-cat]').forEach(c=>{
+    c.classList.toggle('selected', cat !== 'all' && c.dataset.cat === cat);
+  });
+  document.querySelectorAll('#screen-recanalysis .chip[data-cat]').forEach(c=>{
+    c.classList.toggle('active', c.dataset.cat === cat);
+  });
+  applyRecFilters();
+}
+function filterByStatus(status, btn){
+  recFilterStatus = status;
+  document.querySelectorAll('#recStatusFilter .chip[data-status]').forEach(c=>{
+    c.classList.toggle('active', c.dataset.status === status);
+  });
+  applyRecFilters();
+}
+function applyRecFilters(){
+  document.querySelectorAll('#unifiedRecsTable tbody tr').forEach(row=>{
+    const catOk = (recFilterCat === 'all' || row.dataset.cat === recFilterCat);
+    const statusOk = (recFilterStatus === 'all' || row.dataset.status === recFilterStatus);
+    row.style.display = (catOk && statusOk) ? '' : 'none';
+  });
+}
+
+
+// chat
+function toggleChat(){ document.getElementById('chatDrawer').classList.toggle('open'); }
+function openChat(kind,ref){
+  document.getElementById('chatDrawer').classList.add('open');
+  if(kind==='order'){
+    addMsg('user', 'Why was order '+ref+' re-routed?');
+    setTimeout(()=>addMsg('bot','Order '+ref+' was moved because the destination store primary DC was projected to run 14% over safety stock on this SKU during the delivery window. The recommended DC has spare capacity and is only 40 minutes further, adding RM 18 in transport cost while avoiding an estimated stockout.'), 500);
+    setTimeout(()=>addValidateRow(), 900);
+  }
+}
+function askPreset(text){
+  addMsg('user', text);
+  setTimeout(()=>{
+    if(text.toLowerCase().includes('stockout')){
+      addMsg('bot','Cost minimization is currently ranked P1 and Inventory balance is P4 for this cycle. Moving Inventory balance higher in Optimization Settings typically recovers 0.4\u20130.6pt of stockout rate, at a small cost tradeoff.');
+    } else {
+      addMsg('bot','Checked. This page is consistent with the active constraint set \u2014 all On constraints (vehicle capacity, DC capacity, delivery windows, product compatibility) are satisfied in the optimized plan. No violations found.');
+      addValidateRow();
+    }
+  }, 500);
+}
+function addMsg(role, text){
+  const body = document.getElementById('chatBody');
+  const div = document.createElement('div');
+  div.className = 'msg '+role;
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+function addValidateRow(){
+  const body = document.getElementById('chatBody');
+  const div = document.createElement('div');
+  div.className = 'msg-validate';
+  div.innerHTML = '<button class="btn btn-sm btn-success-outline">Mark validated</button><button class="btn btn-sm btn-ghost">Flag for review</button>';
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+function sendChat(){
+  const input = document.getElementById('chatInput');
+  if(!input.value.trim()) return;
+  askPreset(input.value.trim());
+  input.value='';
+}
+
+// capacity scenarios: warehouse / transportation sub-tabs
+function flashCell(el){
+  el.classList.add('cell-flash');
+  setTimeout(()=>{ el.classList.remove('cell-flash'); }, 1700);
+}
+
+
+// consensus & publish: ad-hoc rerun and sign-off / publish workflow
+let modelVersion = 3;
+function triggerAdhocRerun(){
+  modelVersion++;
+  const vtag = 'v'+modelVersion;
+  document.getElementById('modelVersionTag').textContent = vtag;
+  const steps = document.querySelectorAll('#stepTracker .step-card');
+  steps[3].classList.remove('active'); steps[3].classList.add('done');
+  steps[3].querySelector('.step-status').className = 'step-status done';
+  steps[3].querySelector('.step-status').textContent = 'Complete';
+  steps[4].classList.add('active');
+  steps[4].querySelector('.step-status').className = 'step-status active';
+  steps[4].querySelector('.step-status').textContent = 'In progress';
+  const now = new Date();
+  const hh = now.getHours().toString().padStart(2,'0');
+  const mm = now.getMinutes().toString().padStart(2,'0');
+  const tl = document.getElementById('consensusTimeline');
+  const prevLine = tl.querySelector('.timeline-item:last-child .timeline-line');
+  if(!prevLine){
+    const rail = tl.querySelector('.timeline-item:last-child .timeline-rail');
+    if(rail){ const line = document.createElement('div'); line.className='timeline-line'; rail.appendChild(line); }
+  }
+  const item = document.createElement('div');
+  item.className = 'timeline-item';
+  item.innerHTML = '<div class="timeline-rail"><div class="timeline-dot rerun"></div></div>'
+    + '<div class="timeline-body"><div class="timeline-time">'+hh+':'+mm+'</div>'
+    + '<div class="timeline-text"><b>Ad-hoc refresh triggered &middot; rerun to '+vtag+'</b></div>'
+    + '<div class="timeline-text" style="color:var(--text-muted);margin-top:2px;">Planner pulled an updated capacity snapshot and reran the model outside the scheduled cycle.</div></div>';
+  tl.appendChild(item);
+}
+function signOffTeam(btn){
+  const row = btn.closest('.signoff-row');
+  const status = row.querySelector('.signoff-status');
+  status.className = 'signoff-status signed';
+  status.textContent = 'Signed off';
+  btn.remove();
+  const total = document.querySelectorAll('.signoff-row').length;
+  const signed = document.querySelectorAll('.signoff-status.signed').length;
+  document.getElementById('signoffCount').textContent = signed+' / '+total+' signed off';
+  if(signed === total){
+    const steps = document.querySelectorAll('#stepTracker .step-card');
+    steps[4].classList.remove('active'); steps[4].classList.add('done');
+    steps[4].querySelector('.step-status').className = 'step-status done';
+    steps[4].querySelector('.step-status').textContent = 'Complete';
+    steps[5].classList.add('active');
+    steps[5].querySelector('.step-status').className = 'step-status active';
+    steps[5].querySelector('.step-status').textContent = 'In progress';
+  }
+}
+function publishPlan(){
+  const total = document.querySelectorAll('.signoff-row').length;
+  const signed = document.querySelectorAll('.signoff-status.signed').length;
+  if(signed < total){
+    alert('All teams must sign off before the plan can be published. '+signed+' of '+total+' have signed off so far.');
+    return;
+  }
+  const vtag = 'v'+modelVersion;
+  document.getElementById('publishedVersionText').textContent = vtag;
+  document.getElementById('publishBanner').classList.add('show');
+  document.getElementById('publishBtn').disabled = true;
+  document.getElementById('publishBtn').textContent = 'Published';
+  const steps = document.querySelectorAll('#stepTracker .step-card');
+  steps[5].classList.remove('active'); steps[5].classList.add('done');
+  steps[5].querySelector('.step-status').className = 'step-status done';
+  steps[5].querySelector('.step-status').textContent = 'Complete';
+  const tl = document.getElementById('consensusTimeline');
+  const now = new Date();
+  const hh = now.getHours().toString().padStart(2,'0');
+  const mm = now.getMinutes().toString().padStart(2,'0');
+  const item = document.createElement('div');
+  item.className = 'timeline-item';
+  item.innerHTML = '<div class="timeline-rail"><div class="timeline-dot publish"></div></div>'
+    + '<div class="timeline-body"><div class="timeline-time">'+hh+':'+mm+'</div>'
+    + '<div class="timeline-text"><b>Plan published &middot; '+vtag+'</b></div>'
+    + '<div class="timeline-text" style="color:var(--text-muted);margin-top:2px;">Committed as the execution plan for Week 27 after consensus from all teams involved.</div></div>';
+  tl.appendChild(item);
+}
+</script>
+</body>
+</html>
